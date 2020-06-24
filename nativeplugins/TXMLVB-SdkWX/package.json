@@ -1,0 +1,80 @@
+{
+	"name": "腾讯云移动直播插件",  
+	"id": "TXMLVB-SdkWX",  
+	"version": "1.0",  
+	"description": "腾讯云移动直播插件",  
+	"_dp_type":"nativeplugin",  
+	"_dp_nativeplugin":{ 
+		"android": {
+			"plugins": [  
+				{
+					"type": "module",  
+					"name": "TXMLVB-SdkWX",  
+					"class": "com.yanyanmm.txmlvbsdkwx.TXMLVBSdkWXModule"  
+				}
+			],  
+			"hooksClass": "com.yanyanmm.txmlvbsdkwx.TXMLVBAppProxy",  
+			"integrateType": "aar",  
+			"dependencies": [
+				"com.google.code.gson:gson:2.8.2",
+				"com.squareup.okhttp3:logging-interceptor:3.9.0",
+				"com.squareup.retrofit2:retrofit:2.3.0",
+				"com.squareup.retrofit2:converter-gson:2.3.0"
+			],  
+			"abis": [
+				"armeabi-v7a"
+			], 
+			"minSdkVersion": "19",
+			"parameters": {
+				"插件KEY": {
+					"des": "插件的key",
+					"key": "tx_lvb_key"
+				}
+			}
+		},
+		"ios": {
+			"plugins": [
+				{
+					"type": "module",
+					"name": "TXMLVB-SdkWX",
+					"class": "TXMLVBSdkWXModule"
+				}
+			],
+			"hooksClass": "TXMLVBAppProxy",
+			"integrateType": "library",
+			"frameworks": [
+				"libz.tbd",
+				"libc++.tbd",
+				"libresolv.tbd",
+				"libsqlite3.tbd",
+				"Accelerate.framework",
+				"OpenAL.framework",
+				"ImSDK.framework"
+			],
+			"embedFrameworks": [
+				"ImSDK.framework"
+			],
+			"plists":{
+				"UIBackgroundModes":[
+					"audio"
+				]
+			},
+			"resources": [
+			],  
+			"validArchitectures": [
+				"arm64"
+			],
+			"privacies": [
+				"NSCameraUsageDescription",
+				"NSMicrophoneUsageDescription"
+			],  
+			"deploymentTarget": "9.0",
+			"parameters": {
+				"插件KEY": {
+					"des": "插件的key",
+					"key": "tx_lvb_key"
+				}
+			}
+		}
+	}
+}

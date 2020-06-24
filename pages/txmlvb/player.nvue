@@ -1,0 +1,52 @@
+<template>
+	<view>
+		<tx_player_view ref="playerView" style="width: 100%;height: 300px;"></tx_player_view>
+		<button type="primary" @click="onClickPlay()">开始拉流</button>
+		<button type="primary" @click="onClickStopPlay()">停止拉流</button>
+	</view>
+</template>
+
+<script>
+	//插件对象
+	var player = uni.requireNativePlugin('TXMLVB-Player');
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		onLoad() {
+			//配置
+			player.setConfig({
+				
+			});
+			
+			//事件回调
+			player.setPlayListener(function(res){
+				console.log(res);
+			});
+		},
+		methods: {
+			onClickPlay() {
+				var playerView = this.$refs.playerView;
+				//开始拉流
+				var rtmpUrl = "http://live.tjdami.com/live/fixedpush.flv";
+				var playType = 1;
+				playerView.startPlay(rtmpUrl, playType, function(res){
+					console.log(res);
+				});
+			},
+			onClickStopPlay() {
+				//停止拉流
+				var isNeedClearLastImg = true;
+				player.stopPlay(isNeedClearLastImg, function(res){
+					console.log(res);
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

@@ -1,0 +1,443 @@
+<template>
+	<view>
+		<tx_live_room ref="roomView" :style="`width: 100%;height: ${screenHeight}px;`"></tx_live_room>
+		<tx_live_room ref="linkView" style="position: fixed;width:80px;height:120px;top:10px;right:10px"></tx_live_room>
+		<uni-popup ref="popupClose" type="dialog">
+			<uni-popup-dialog type="info" content="即将关闭直播,是否继续？" @confirm="onClickExitRoom"></uni-popup-dialog>
+		</uni-popup>
+		<view>
+			<view class="arrow-boxs">
+				<image class="user-img" :src="storeAvatar"></image>
+				<view>
+					<text class="id">{{storeName}}</text>
+					<text class="text-box">热度&nbsp;&nbsp;{{hotDegree}}</text>
+				</view>
+				<image class="close_btn" @click="onClickExitRoom()" src="~@/static/live-video/close.png"></image>
+				<view class="good_primary">
+					<image class="good_primary_icon" src="~@/static/live-video/goods_hot_fill.png" @click="gotoDetail()"></image>
+					<text class="good_primary_text">推荐</text>
+				</view>
+				<view class="exit_audio_live" v-if="!isJoin">
+					<image class="exit_audio_live_icon" src="~@/static/live-video/voice.png" @click="onClickJoinAnchor()"></image>
+					<text class="exit_audio_live_text">请求连麦</text>
+				</view>
+				<view class="exit_audio_live" v-if="isJoin">
+					<image class="exit_audio_live_icon" src="~@/static/live-video/voice_fill.png" @click="onClickExitAnchor()"></image>
+					<text class="exit_audio_live_text">退出连麦</text>
+				</view>
+			</view>
+			
+			<!-- 这是聊天弹窗 -->
+			<chat-view :chatList="chatList"></chat-view>
+			
+			<!-- 这是功能按钮 -->
+			<view v-if="!messageTextVisable">
+				<view><text class="but-input" @click="inputClick">跟主播聊些什么？</text></view>
+				<image class="but-img but-zhiboshop" src="~@/static/live-video/social-shopify.png" @click="openMark(0)"></image>
+				<!-- <image class="but-img but-meiyan" src="~@/static/live-video/meiyan_white.png" @click="openmeiyan"></image> -->
+				<!-- <image class="but-img but-qiehuan" src="~@/static/live-video/camera_rotate_white.png" @click="switchCamera"></image> -->
+				<!-- <image class="but-img but-dianzan" src="~@/static/live-video/appreciate_fill.png"></image> -->
+				<like-button class="but-dianzan" :showImgs="showImgs" src="../../static/live-video/appreciate_fill.png" @handleClick="clickLike"></like-button>
+			</view>
+
+			<view v-if="messageTextVisable">
+				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput"/>
+				<text class="but-textarea-confirm" @click="onClickSendMsg">发送</text>
+			</view>
+			
+			<!-- 这是商品弹窗 -->
+			<uni-popup ref="popup" type="bottom">
+				<good-list :storeId="storeId"></good-list>
+			</uni-popup>
+		
+		</view>
+		<!-- <text class="but-base" style="position: fixed;top: 80px; right:10px" @click="onClickJoinAnchor()">请求连麦</text> -->
+		<!-- <text class="but-base" style="position: fixed;top: 180px; right:10px" @click="onClickExitAnchor()">退出连麦</text> -->
+		<!-- <text class="but-base" style="position: fixed;bottom:30px; left:10px" @click="onClickSendMsg()">发送消息</text> -->
+		<!-- <text class="but-base" style="position: fixed;bottom:80px; left:10px" @click="onClickExitRoom()">退出房间</text> -->
+	</view>
+</template>
+
+<script>
+	//LVB插件对象
+	var sdkwx = uni.requireNativePlugin('TXMLVB-LiveRoom');
+	import uniPopup from '@/components/uni-popup/uni-popup.vue'
+	import uniPopupMessage from '@/components/uni-popup/uni-popup-message.vue'
+	import uniPopupDialog from '@/components/uni-popup/uni-popup-dialog.vue'
+	import chatView from './chat_view.vue'
+	import goodList from './good_list_view.vue'
+	import likeButton from '@/components/like-button/like-button.vue'
+	export default {
+		components: {
+			uniPopup,
+			uniPopupMessage,
+			uniPopupDialog,
+			chatView,
+			goodList,
+			likeButton
+		},
+		data() {
+			return {
+				screenHeight:0,//屏幕高度
+				roomID: null,
+				storeId: null,
+				storeName: null,
+				storeAvatar: null,
+				chatList: [],
+				messageTextVisable: false,
+				message: null,
+				mTextFocus: false,
+				hotDegree: 0,
+				showImgs: ['../../static/live-video/favor_fill.png','../../static/live-video/crown_fill.png', '../../static/live-video/cart_fill.png', '../../static/live-video/choiceness_fill.png'],
+				isJoin: false
+			}
+		},
+		onLoad: function(option) {
+			this.screenHeight=wx.getSystemInfoSync().screenHeight;
+			console.log(option)
+			this.roomID = option.roomID
+			this.storeName = option.storeName
+			this.storeAvatar = option.storeAvatar
+			this.storeId = option.storeId
+			//设置事件回调
+			var that = this;
+			sdkwx.setListener(function(res){
+				if (res.type == "onDebugLog") {
+					return;
+				}
+				console.log(res);//通过res.type == 'onXXX' 判断回调方法
+				if (res.type == "onAnchorExit") {
+					that.onAnchorExit(res.data);
+				} else if (res.type == "onKickoutJoinAnchor") {
+					that.onKickoutJoinAnchor(res.data);
+				} else if (res.type == "onRoomDestroy") {
+					that.onRoomDestroy();
+				} else if(res.type == "onRecvRoomTextMsg"){
+					that.onRecvRoomTextMsg(res.data);
+					console.log("我收到消息了");
+				} else if (res.type == "onAudienceEnter") { //观众进入
+					that.onAudienceEnter(res.data);
+				} else if (res.type == "onAudienceExit") { //观众退出
+					that.onAudienceExit(res.data);
+				} 
+			});
+		},
+		mounted() {
+			this.enterRoom()
+			this.hotDegree = this.hotDegree + 1
+			this.getPrimary()
+		},
+		onUnload() {
+			// this.onClickExitRoom()
+			//如果有连麦需要停止连麦
+			
+		},
+		onBackPress(){
+			this.exitRoom();
+		},
+		beforeDestroy() {		
+			this.exitRoom();
+			//停止本地视频预览
+			// liveView.stopLocalPreview();
+		},
+		methods: {
+			enterRoom() {
+				var roomView = this.$refs.roomView;
+				console.log(this.roomID)
+				//进入房间
+				roomView.enterRoom(this.roomID, function(res){
+					console.log(res);
+					if(res.code!==0){
+						uni.showToast({
+							title: '直播已结束',
+							icon: 'none'
+						})
+					}
+					//进入房间成功发送一条自定义消息
+					let enterMsg = uni.getStorageSync('nickname') + " 进入房间了"
+					sdkwx.sendRoomCustomMsg("onAudienceEnter", enterMsg, function(res2){
+						console.log(res2);
+					});
+				});
+			},
+			onClickExit() {
+				this.$refs.popupClose.open();
+			},
+			onClickExitRoom() {
+				this.exitRoom()
+				uni.navigateBack({ //uni.navigateTo跳转的返回，默认1为返回上一级
+					delta: 1
+				});
+			},
+			exitRoom(){
+				//退出房间
+				var roomView = this.$refs.roomView;
+				roomView.exitRoom(function(res){
+					console.log(res);
+					//进入房间成功发送一条自定义消息
+					let exitMsg = uni.getStorageSync('nickname') + " 离开房间了"
+					sdkwx.sendRoomCustomMsg("onAudienceExit", exitMsg, function(res2){
+						console.log(res2);
+					});
+				});
+			},
+			onAudienceEnter(data) {
+				this.hotDegree = this.hotDegree + 1
+			},
+			onAudienceExit(data) {
+				this.hotDegree = this.hotDegree - 1
+			},
+			onClickJoinAnchor() {
+				var linkView = this.$refs.linkView;
+				//请求连麦
+				let joinMsg = uni.getStorageSync('nickname') + " 请求连麦"
+				sdkwx.requestJoinAnchor(joinMsg, function(res){
+					console.log(res);
+					if (res.code == 0) {//接收
+						//开启本地视频预览
+						linkView.startLocalPreview(true);
+						//加入连麦
+						sdkwx.joinAnchor(function(res2){
+							console.log('连麦结果', res2);
+							uni.showToast({
+								title: '连麦成功',
+								icon: 'none'
+							})
+							this.isJoin = true
+						});
+					} else if (res.code == -8) {//拒绝
+						uni.showToast({
+							title: '连麦请求被拒绝',
+							icon: 'none'
+						})
+					} else {//错误超时
+						uni.showToast({
+							title: '连麦请求超时或错误',
+							icon: 'none'
+						})
+					}
+				});
+			},
+			onAnchorExit(data) {
+				var linkView = this.$refs.linkView;
+				//停止远程视频view
+				linkView.stopRemoteView();
+			},
+			onKickoutJoinAnchor(data){
+				var linkView = this.$refs.linkView;
+				//停止本地视频
+				linkView.stopLocalPreview();
+			},
+			onClickExitAnchor() {
+				//退出连麦
+				var linkView = this.$refs.linkView;
+				sdkwx.quitJoinAnchor(function(res){
+					//停止本地视频
+					linkView.stopLocalPreview();
+					console.log("quitJoinAnchor", res);
+					this.isJoin = false
+				});
+			},
+			messageInput(event) {
+				this.message = event.detail.value
+			},
+			onClickSendMsg() {
+				console.log(this.message)
+				//发送消息
+				sdkwx.sendRoomTextMsg(this.message, function(res){
+					console.log("sendRoomTextMsg", res);
+				});
+				this.messageTextVisable = false
+				uni.hideKeyboard()
+				this.chatList.push({
+					name: uni.getStorageSync('nickname'),
+					text: this.message
+				})
+			},
+			onRecvRoomTextMsg(data) {
+				this.chatList.push({
+					name: data.userName,
+					text: data.message
+				})
+			},
+			onRoomDestroy() {
+				uni.navigateBack({});
+			},
+			openMark() {
+				this.$refs.popup.open()
+			},
+			inputClick() {
+				this.messageTextVisable = true
+				this.mTextFocus = true
+			},
+			clickLike(){
+				console.log('666!')
+			},
+			getPrimary(){
+				console.log(3)
+				sdkwx.getCustomInfo(this.roomId,function(res){
+					console.log(res)
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.but-base {
+		position: fixed;
+		width: 160rpx;
+		height: 76rpx;
+		background-color: rgba(49, 182, 48, 0.6);
+		line-height: 76rpx;
+		font-size: 28rpx;
+		color: white;
+		text-align: center;
+		border-radius: 20upx;
+	}
+	.close_btn {
+		position: fixed;
+		top: 50rpx;
+		right: 40rpx;
+		width: 60rpx;
+		height: 60rpx;
+	}
+	.exit_audio_live {
+		position: fixed;
+		top: 280rpx;
+		right: 30rpx;
+	}
+	
+	.exit_audio_live_icon {
+		width: 70rpx;
+		height: 70rpx;
+		margin-left: 10rpx;
+	}
+	
+	.exit_audio_live_text {
+		font-size: 24rpx;
+	}
+	
+	.good_primary {
+		position: fixed;
+		top: 230rpx;
+		left: 30rpx;
+		/* background-color: #000000; */
+		border-color: #000000;
+		border-width: 1rpx;
+	}
+	
+	.good_primary_icon {
+		width: 100rpx;
+		height: 100rpx;
+		margin-bottom: 10rpx;
+	}
+	
+	.good_primary_text {
+		font-size: 28rpx;
+		text-align: center;
+	}
+	
+	.but-img {
+		width: 80rpx;
+		height: 80rpx;
+		/* background-color: rgba(0, 0, 0, .4); */
+		/* border-radius: 40rpx; */
+		padding: 12rpx;
+	}
+	
+	.but-qiehuan {
+		position: fixed;
+		right: 30rpx;
+		bottom: 20rpx;
+	}
+	
+	.but-dianzan {
+		width: 60upx;
+		height: 60upx;
+		position: fixed;
+		right: 30rpx;
+		bottom: 20rpx;
+		/* background-color: #000000; */
+	}
+	
+	.but-meiyan {
+		position: fixed;
+		right: 120rpx;
+		bottom: 20rpx;
+	}
+	
+	.but-zhiboshop {
+		position: fixed;
+		left: 30rpx;
+		bottom: 20rpx;
+		padding: 0rpx;
+	}
+	
+	.but-input {
+		position: fixed;
+		left: 120rpx;
+		bottom: 20rpx;
+		background-color: rgba(0, 0, 0, .1);
+		width: 400rpx;
+		z-index: 10;
+		font-size: 28rpx;
+		padding: 15rpx 25rpx;
+		border-radius: 30rpx;
+		color: #AAAAAA !important;
+	}
+	
+	.but-textarea {
+		position: fixed;
+		bottom: 0rpx;
+		width: 642rpx;
+		height: 76rpx;
+		line-height: 76rpx;
+		font-size: 30rpx;
+		border-width: 1rpx;
+		background-color: white;
+		padding: 0upx 10upx;
+	}
+	
+	.but-textarea-confirm {
+		position: fixed;
+		bottom: 0rpx;
+		right: 0rpx;
+		width: 110rpx;
+		height: 76rpx;
+		background-color: #31b630;
+		line-height: 76rpx;
+		font-size: 28rpx;
+		color: white;
+		text-align: center;
+	}
+	
+	.arrow-boxs {
+		padding: 20rpx 40rpx 20rpx 40rpx;
+		align-items: center;
+		flex-direction: row;
+		position: fixed;
+		top: 50rpx;
+		left: 30rpx;
+		z-index: 10;
+		border-radius: 60rpx;
+		background-color: rgba(0, 0, 0, .4);
+	}
+	
+	.id {
+		font-size: 28rpx;
+		color: white;
+	}
+	
+	.text-box {
+		font-size: 24rpx;
+		color: white;
+	}
+	
+	.user-img {
+		margin-right: 10rpx;
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 50%;
+	}
+</style>

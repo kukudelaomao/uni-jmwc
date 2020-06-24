@@ -1,0 +1,484 @@
+<template>
+	<div>
+		<!-- 		<view :style="{width: width + 'px',height:height + 'px'}" v-if="markact" class="mark">
+			<text class="mark-text">直播启动中...</text>
+		</view> -->
+		<tx_live_room ref="liveView" :style="`width: 100%;height: ${screenHeight}px;`"></tx_live_room>
+		<tx_live_room ref="linkView" style="position:fixed;width:80px;height:120px;top:10px;right:10px"></tx_live_room>
+		<!-- <text class="but-begin-live" @click="onClickLive()">开始直播</text> -->
+		<!-- <button type="primary" style="position: fixed;top:130px; left:10px" @click="onClickGetAudienceList()">观众列表</button> -->
+		<!-- <button type="primary" style="position: fixed;bottom:130px; right:10px" @click="onClickSendMsg()">发送消息</button> -->
+		
+		<view>
+			<view class="arrow-boxs">
+				<image class="user-img" :src="storeAvatar"></image>
+				<view>
+					<text class="id">{{storeName}}</text>
+					<text class="text-box">热度&nbsp;&nbsp;{{hotDegree}}</text>
+				</view>
+				<image class="close_btn" @click="onClickExit()" src="~@/static/live-video/close.png"></image>
+				<view class="exit_audio_live" v-if="isJoin">
+					<image class="exit_audio_live_icon" src="~@/static/live-video/voice.png" @click="onClickExitAnchor()"></image>
+					<text class="exit_audio_live_text">退出连麦</text>
+				</view>
+			</view>
+			<!-- 这是聊天弹窗 -->
+			<chat-view :chatList="chatList"></chat-view>
+
+			<!-- 这是功能按钮 -->
+			<view v-if="!messageTextVisable">
+				<view><text class="but-input" @click="inputClick">跟粉丝聊些什么？</text></view>
+				<image class="but-img but-zhiboshop" src="~@/static/live-video/social-shopify.png" @click="openMark(0)"></image>
+				<image class="but-img but-meiyan" v-if="beauty===0" src="~@/static/live-video/meiyan_white.png" @click="switchMeiyan"></image>
+				<image class="but-img but-meiyan" v-else src="~@/static/live-video/meiyan_kai.png" @click="switchMeiyan"></image>
+				<image class="but-img but-qiehuan" src="~@/static/live-video/camera_rotate_white.png" @click="switchCamera"></image>
+			</view>
+
+			<view v-if="messageTextVisable">
+				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput" />
+				<text class="but-textarea-confirm" @click="onClickSendMsg">发送</text>
+			</view>
+
+			<!-- 这是商品弹窗 -->
+			<uni-popup ref="popup" type="bottom">
+				<good-list @setPrimary="setPrimary" :storeId="storeId"></good-list>
+			</uni-popup>
+			<!-- 这是退出提醒弹窗 -->
+			<uni-popup ref="popupClose" type="dialog">
+				<uni-popup-dialog type="info" content="即将关闭直播,是否继续？" @confirm="confirmExitRoom"></uni-popup-dialog>
+			</uni-popup>
+			<!-- 这是连麦请求弹窗 -->
+			<uni-popup ref="popupRequestJoin" type="dialog">
+				<uni-popup-dialog type="info" :content="joinContent" @confirm="confirmJoin" @close="closeJoin"></uni-popup-dialog>
+			</uni-popup>
+		</view>
+	</div>
+</template>
+
+<script>
+	//LVB插件对象
+	var sdkwx = uni.requireNativePlugin('TXMLVB-LiveRoom');
+	import uniPopup from '@/components/uni-popup/uni-popup.vue'
+	import uniPopupMessage from '@/components/uni-popup/uni-popup-message.vue'
+	import uniPopupDialog from '@/components/uni-popup/uni-popup-dialog.vue'
+	import chatView from './chat_view.vue'
+	import goodList from './good_list_view.vue'
+	export default {
+		components: {
+			uniPopup,
+			uniPopupMessage,
+			uniPopupDialog,
+			chatView,
+			goodList
+		},
+		data() {
+			return {
+				screenHeight: 0, //屏幕高度
+				markact: true,
+				chatList: [],
+				messageTextVisable: false,
+				message: null,
+				mTextFocus: false,
+				liveTitle: null,
+				roomAvatar: null,
+				roomId: uni.getStorageSync('firmId'),
+				beauty: 0,
+				hotDegree: 0,
+				storeAvatar: uni.getStorageSync('storeLogo'),
+				storeName: uni.getStorageSync('storeName'),
+				storeId: '57',
+				// storeId: uni.getStorageSync('storeId'),
+				isJoin: false,	// 是否在连麦状态
+				tmpData: null	// 连麦数据临时存放
+			}
+		},
+		computed:{
+			joinContent:function(){
+				if(this.tmpData!==null){
+					return this.tmpData.anchorInfo.userName + ' 请求连麦，是否接听？'
+				}
+			}
+		},
+		onLoad(option) {
+			this.screenHeight = wx.getSystemInfoSync().screenHeight;
+			console.log(option)
+			this.liveTitle = option.liveTitle
+			this.roomAvatar = option.roomAvatar
+			//设置事件回调
+			var that = this;
+			sdkwx.setListener(function(res) {
+				console.log(res); //通过res.type == 'onXXX' 判断回调方法
+				if (res.type == "onDebugLog") {
+					return;
+				}
+				if (res.type == "onRequestJoinAnchor") { //处理连麦请求
+					that.$refs.popupRequestJoin.open();
+					that.tmpData = res.data
+					// that.onRequestJoinAnchor(res.data);
+				} else if (res.type == "onAnchorEnter") { //观众加入连麦
+					that.onAnchorEnter(res.data);
+				} else if (res.type == "onAnchorExit") { //连麦退出
+					that.onAnchorExit(res.data);
+				} else if (res.type == "onAudienceEnter") { //观众进入
+					that.onAudienceEnter(res.data);
+				} else if (res.type == "onAudienceExit") { //观众退出
+					that.onAudienceExit(res.data);
+				} else if (res.type == "onRecvRoomTextMsg") { //消息
+					that.onRecvRoomTextMsg(res.data);
+					console.log("我收到消息了");
+				} else if (res.type == "onRecvRoomCustomMsg") { //自定义消息
+					var cmd = res.data.cmd;
+					if (cmd == "onAudienceEnter") {
+						console.log(res.data.message);
+						that.hotDegree = that.hotDegree + 1
+						console.log(that.hotDegree)
+					} else if (cmd == "onAudienceExit") {
+						console.log(res.data.message);
+						that.hotDegree = that.hotDegree - 1
+					}
+					that.onRecvRoomCustomMsg(res.data);
+				}
+			});
+		},
+		mounted() {
+			this.onClickLive()
+		},
+		// onUnload() {
+		beforeDestroy() {
+			var liveView = this.$refs.liveView;
+
+			this.exitRoom();
+
+			//停止本地视频预览
+			liveView.stopLocalPreview();
+		},
+		onBackPress(){
+			var liveView = this.$refs.liveView;
+			
+			this.exitRoom();
+			
+			//停止本地视频预览
+			liveView.stopLocalPreview();
+		},
+		methods: {
+			createRoom() {
+				//创建房间
+				var roomId = uni.getStorageSync('firmId'); //房间id
+				var roomInfoJson = {
+					roomAvatar: this.roomAvatar,
+					liveTitle: this.liveTitle,
+					storeAvatar: uni.getStorageSync('storeLogo'),
+					storeName: uni.getStorageSync('storeName'),
+					storeId: uni.getStorageInfoSync('storeId')
+				}; //房间信息
+				var roomInfo = JSON.stringify(roomInfoJson)
+				console.log("start createRoom",roomInfo);
+				sdkwx.createRoom(roomId, roomInfo, function(res) {
+					console.log(res);
+					if (res.code == 0) {
+						console.log("createRoom success");
+					}
+				});
+			},
+			onClickLive() {
+				var liveView = this.$refs.liveView;
+				console.log(liveView)
+				//开始本地视频预览
+				var frontCamera = true; //true:前置摄像头 false：后置摄像头
+				liveView.startLocalPreview(frontCamera);
+
+				//创建房间
+				setTimeout(()=>{
+					this.createRoom();
+				},100)
+			},
+			onClickExit() {
+				this.$refs.popupClose.open();
+			},
+			confirmExitRoom(done) {
+				this.$refs.popupClose.close();
+				// uni.navigateTo({
+				// 	url: '../txmlvb/login'
+				// });
+				uni.navigateBack({ //uni.navigateTo跳转的返回，默认1为返回上一级
+					delta: 1
+				});
+			},
+			exitRoom(done) {
+				console.log('exit')
+				sdkwx.exitRoom(function(res) {
+					console.log("exitRoom success");
+				});
+			},
+			onClickGetAudienceList() {
+				sdkwx.getAudienceList(this.roomId, function(res) {
+					console.log(res);
+				});
+			},
+			confirmJoin(done){
+				this.$refs.popupRequestJoin.close();
+				let userID = this.tmpData.anchorInfo.userID;
+				let reason = this.tmpData.reason;
+				sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
+					console.log(res);
+				})
+				this.isJoin = true
+			},
+			closeJoin(done){
+				this.$refs.popupRequestJoin.close();
+				let userID = this.tmpData.anchorInfo.userID;
+				let reason = this.tmpData.reason;
+				sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
+					console.log(res);
+				})
+				this.isJoin = false
+			},
+			// onRequestJoinAnchor(data) {
+			// 	var userID = data.anchorInfo.userID;
+			// 	var reason = data.reason;
+			// 	//主播同意连麦
+			// 	sdkwx.responseJoinAnchor(userID, true, reason, function(res) {
+			// 		console.log(res);
+			// 	})
+			// },
+			onAnchorEnter(data) {
+				var linkView = this.$refs.linkView;
+				//开启远程连麦
+				linkView.startRemoteView(data, function(res) {
+					console.log(res);
+				});
+			},
+			onAnchorExit(data) {
+				var linkView = this.$refs.linkView;
+				//停止远程视频view
+				linkView.stopRemoteView();
+			},
+			onAudienceEnter(data) {
+				// this.chatList.push({
+				// 	name: data.userName,
+				// 	text: data.message
+				// })
+				this.hotDegree = this.hotDegree + 1
+			},
+			onAudienceExit(data) {
+				// this.chatList.push({
+				// 	name: data.userName,
+				// 	text: data.message
+				// })
+				this.hotDegree = this.hotDegree - 1
+			},
+			onRecvRoomTextMsg(data) {
+				this.chatList.push({
+					name: data.userName,
+					text: data.message
+				})
+			},
+			onRecvRoomCustomMsg(data) {
+
+			},
+			onClickExitAnchor() {
+				var linkView = this.$refs.linkView;
+				//停止远程视频view
+				linkView.stopRemoteView();
+				
+				//主播踢出连麦
+				sdkwx.kickoutJoinAnchor(this.tmpData.anchorInfo.userID);
+				this.isJoin = false
+			},
+			messageInput(event) {
+				this.message = event.detail.value
+			},
+			onClickSendMsg() {
+				//发送消息
+				sdkwx.sendRoomTextMsg(this.message, function(res) {
+					console.log("sendRoomTextMsg", res);
+				});
+				this.messageTextVisable = false
+				uni.hideKeyboard()
+				this.chatList.push({
+					name: uni.getStorageSync('nickname'),
+					text: this.message
+				})
+			},
+			openMark() {
+				this.$refs.popup.open()
+			},
+			switchMeiyan() {
+				if (this.beauty === 0) {
+					this.beauty = 9
+				} else {
+					this.beauty = 0
+				}
+				sdkwx.setBeautyLevel(this.beauty);
+			},
+			switchCamera() {
+				sdkwx.switchCamera();
+			},
+			inputClick() {
+				this.messageTextVisable = true
+				this.mTextFocus = true
+			},
+			setPrimary(it){
+				console.log(it)
+				sdkwx.setCustomInfo(this.roomId,'MLVBCommonDef.CustomFieldOp#SET','primaryGood',it.goodsGroupId,function(res){
+					console.log(res)
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+	.close_btn {
+		position: fixed;
+		top: 50rpx;
+		right: 40rpx;
+		width: 60rpx;
+		height: 60rpx;
+	}
+
+	.exit_audio_live {
+		position: fixed;
+		top: 280rpx;
+		right: 30rpx;
+	}
+
+	.exit_audio_live_icon {
+		width: 70rpx;
+		height: 70rpx;
+		margin-left: 10rpx;
+	}
+
+	.exit_audio_live_text {
+		font-size: 24rpx;
+	}
+
+	/* 	.add-shop {
+		font-size: 16rpx;
+		color: #333333;
+		position: absolute;
+		top: 20rpx;
+		left: 20rpx;
+		z-index: 10;
+	} */
+
+	.but-img {
+		width: 80rpx;
+		height: 80rpx;
+		/* background-color: rgba(0, 0, 0, .4); */
+		/* border-radius: 40rpx; */
+		padding: 12rpx;
+	}
+
+	.but-qiehuan {
+		position: fixed;
+		right: 30rpx;
+		bottom: 20rpx;
+	}
+
+	.but-meiyan {
+		position: fixed;
+		right: 120rpx;
+		bottom: 24rpx;
+		width: 76rpx;
+		height: 76rpx;
+	}
+
+	.but-zhiboshop {
+		position: fixed;
+		left: 30rpx;
+		bottom: 20rpx;
+		padding: 0rpx;
+	}
+
+	.but-input {
+		position: fixed;
+		left: 120rpx;
+		bottom: 20rpx;
+		background-color: rgba(0, 0, 0, .1);
+		width: 400rpx;
+		z-index: 10;
+		font-size: 28rpx;
+		padding: 15rpx 25rpx;
+		border-radius: 30rpx;
+		color: #AAAAAA !important;
+	}
+
+	.but-textarea {
+		position: fixed;
+		bottom: 0rpx;
+		width: 642rpx;
+		height: 76rpx;
+		line-height: 76rpx;
+		font-size: 30rpx;
+		border-width: 1rpx;
+		background-color: white;
+		padding: 0upx 10upx;
+	}
+
+	.but-textarea-confirm {
+		position: fixed;
+		bottom: 0rpx;
+		right: 0rpx;
+		width: 110rpx;
+		height: 76rpx;
+		background-color: #31b630;
+		line-height: 76rpx;
+		font-size: 28rpx;
+		color: white;
+		text-align: center;
+	}
+
+	.but-begin-live {
+		position: fixed;
+		top: 60rpx;
+		left: 350rpx;
+		width: 160rpx;
+		height: 76rpx;
+		background-color: rgba(49, 182, 48, 0.6);
+		line-height: 76rpx;
+		font-size: 28rpx;
+		color: white;
+		text-align: center;
+		border-radius: 20upx;
+	}
+
+	.but {
+		background-color: rgba(0, 0, 0, .4);
+		position: fixed;
+		bottom: 0rpx;
+		right: 0rpx;
+		align-items: center;
+		flex-direction: row;
+		padding: 0 30rpx 20rpx 30rpx;
+	}
+
+	.arrow-boxs {
+		padding: 20rpx 40rpx 20rpx 40rpx;
+		align-items: center;
+		flex-direction: row;
+		position: fixed;
+		top: 50rpx;
+		left: 30rpx;
+		z-index: 10;
+		border-radius: 60rpx;
+		background-color: rgba(0, 0, 0, .4);
+	}
+
+	.id {
+		font-size: 28rpx;
+		color: white;
+	}
+
+	.text-box {
+		font-size: 24rpx;
+		color: white;
+	}
+
+	.user-img {
+		margin-right: 10rpx;
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 50%;
+	}
+</style>

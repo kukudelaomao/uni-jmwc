@@ -1,0 +1,154 @@
+{
+	"pages": [
+		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		//启动页
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "大米科技",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		},
+		// 引导页
+		{
+			"path": "pages/guide-pages/guide-pages",
+			"style": {
+				"navigationBarTitleText": "大米科技",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		},
+		// 主程序webview页
+		{
+			"path": "pages/main-webview/main-webview",
+			"style": {
+				"navigationBarTitleText": "大米科技",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		},
+		// 生成二维码海报并分享
+		{
+			"path": "pages/make-share-qrcode/make-share-qrcode",
+			"style": {
+				"navigationBarTitleText": "分享",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		},
+		// 专门用于访问外部链接的webview，方便返回主程序界面
+		{
+			"path": "pages/new-webview/new-webview",
+			"style": {
+				"navigationBarTitleText": "外链",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		},
+		// 直播设置
+		{
+			"path": "pages/tencent-live-video/openZhibo/index",
+			"style": {
+				"navigationBarTitleText": "开启直播"
+			}
+		},
+		// 直播推流
+		{
+			"path": "pages/tencent-live-video/tui/index",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false,
+					"scrollIndicator": "none"
+				}
+			}
+		},
+		// 直播拉流
+		{
+			"path": "pages/tencent-live-video/la/index",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		// TXMLVB
+		{
+		  "path" : "pages/txmlvb/login",
+		  "style" : {
+				"navigationBarTitleText": "房间",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+				    "titleNView": {
+				        "type": "default",
+						"titleText": "房间"
+				    }
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/live_menu",
+			"style": {
+				"navigationBarTitleText": "开直播",
+				"app-plus": {
+				    "titleNView": {
+				        "type": "default",
+						"titleText": "开直播"
+				    }
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/room_menu",
+			"style": {
+				"navigationBarTitleText": "观看菜单",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/live_room",
+			"style": {
+				"navigationBarTitleText": "直播间",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/room",
+			"style": {
+				"navigationBarTitleText": "观看间",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/pusher",
+			"style": {
+				"navigationBarTitleText": "推流",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		}, {
+			"path": "pages/txmlvb/player",
+			"style": {
+				"navigationBarTitleText": "拉流",
+				"app-plus": {
+					"titleNView": false //禁用原生导航栏
+				}
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "#ffffff",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#31b630",
+		"backgroundColor": "#ffffff"
+	}
+}
