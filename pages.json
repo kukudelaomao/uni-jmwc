@@ -51,34 +51,6 @@
 				}
 			}
 		},
-		// 直播设置
-		{
-			"path": "pages/tencent-live-video/openZhibo/index",
-			"style": {
-				"navigationBarTitleText": "开启直播"
-			}
-		},
-		// 直播推流
-		{
-			"path": "pages/tencent-live-video/tui/index",
-			"style": {
-				"navigationStyle": "custom",
-				"app-plus": {
-					"titleNView": false,
-					"scrollIndicator": "none"
-				}
-			}
-		},
-		// 直播拉流
-		{
-			"path": "pages/tencent-live-video/la/index",
-			"style": {
-				"navigationStyle": "custom",
-				"app-plus": {
-					"titleNView": false
-				}
-			}
-		},
 		// TXMLVB
 		{
 		  "path" : "pages/txmlvb/login",
@@ -104,14 +76,6 @@
 				}
 			}
 		}, {
-			"path": "pages/txmlvb/room_menu",
-			"style": {
-				"navigationBarTitleText": "观看菜单",
-				"app-plus": {
-					"titleNView": false //禁用原生导航栏
-				}
-			}
-		}, {
 			"path": "pages/txmlvb/live_room",
 			"style": {
 				"navigationBarTitleText": "直播间",
@@ -123,22 +87,6 @@
 			"path": "pages/txmlvb/room",
 			"style": {
 				"navigationBarTitleText": "观看间",
-				"app-plus": {
-					"titleNView": false //禁用原生导航栏
-				}
-			}
-		}, {
-			"path": "pages/txmlvb/pusher",
-			"style": {
-				"navigationBarTitleText": "推流",
-				"app-plus": {
-					"titleNView": false //禁用原生导航栏
-				}
-			}
-		}, {
-			"path": "pages/txmlvb/player",
-			"style": {
-				"navigationBarTitleText": "拉流",
 				"app-plus": {
 					"titleNView": false //禁用原生导航栏
 				}

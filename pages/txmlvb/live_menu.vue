@@ -27,35 +27,63 @@
 				roomAvatar: uni.getStorageSync('portrait') //用户头像
 			}
 		},
-		mounted() {
-			this.requestAndroidPermission('android.permission.CAMERA').then(()=>{
-				this.requestAndroidPermission('android.permission.RECORD_AUDIO')
-			})
-			
-		},
+
 		methods:{
-			// vue的method里编写如下代码
-			async requestAndroidPermission(permisionID) {
-			    var result = await permision.requestAndroidPermission(permisionID)
-			    var strStatus
-			    if (result == 1) {
-			        strStatus = "已获得授权"
-			    } else if (result == 0) {
-			        strStatus = "未获得授权"
-			    } else {
-			        strStatus = "被永久拒绝权限"
-			    }
-			    // uni.showModal({
-			    //     content: permisionID + strStatus,
-			    //     showCancel: false
-			    // });
-				// uni.showToast({
-				// 	title: permisionID + strStatus,
-				// 	icon: "none"
-				// });
-				console.log(permisionID + strStatus)
-			},
-			open(){
+			// async requestAndroidPermission(permisionID) {
+			//     var result = await permision.requestAndroidPermission(permisionID)
+			//     var strStatus
+			//     if (result == 1) {
+			//         strStatus = "已获得授权"
+			//     } else if (result == 0) {
+			//         strStatus = "未获得授权"
+			//     } else {
+			//         strStatus = "被永久拒绝权限"
+			//     }
+			// 	console.log(permisionID + strStatus)
+			// },
+			async open(){
+				let camera = ''
+				let audio = ''
+				switch(uni.getSystemInfoSync().platform){
+				    case 'android':
+				       console.log('运行Android上')
+					   camera = await permision.requestAndroidPermission('android.permission.CAMERA')
+					   audio = await permision.requestAndroidPermission('android.permission.RECORD_AUDIO')
+					   console.log(camera,audio)
+					   if(camera!==1 || audio!==1){
+					   	uni.showToast({
+					   		title: "开直播需获取设备摄像头和音频权限",
+					   		icon: "none",
+					   		duration: 3000
+					   	});
+					   	return
+					   }
+				       break;
+				    case 'ios':
+				       console.log('运行iOS上')
+					   // camera = await permision.judgeIosPermission("camera")
+					   // audio = await permision.judgeIosPermission("record")
+					   // console.log(camera,audio)
+					   // if(camera!==1 || audio!==1){
+					   // 	uni.showModal({
+					   // 	        content: "开直播需获取设备摄像头和音频权限",
+					   // 	        confirmText: "去设置",
+								// success: function (res) {
+								//         if (res.confirm) {
+								//             console.log('用户点击确定');
+								// 			permision.gotoAppPermissionSetting()
+								//         } else if (res.cancel) {
+								//             console.log('用户点击取消');
+								//         }
+								//     }
+					   // 	    });
+					   // 	return
+					   // }
+				       break;
+				    default:
+				       console.log('运行在开发者工具上')
+				       break;
+				}
 				if(this.liveTitle === null || this.liveTitle === ''){
 					uni.showToast({
 						title: "请输入直播标题",

@@ -14,10 +14,10 @@
 		</waterfall> -->
 	<view>
 		<wfalls-flow :list="list" ref="wfalls" @finishLoad="getLoadNum"></wfalls-flow>
-		<button v-if="isStore" type="primary" size="mini" class="openLive" @click="onClickLiveLogin()">开直播</button>
+		<view v-if="list.length===0" class="no-live">暂无直播</view>
+		<button v-if="isStore" type="primary" size="mini" class="openLive" @click="onClickLiveOpen()">开直播</button>
 	</view>
 	
-	<!-- <button type="primary" @click="onClickPlayLogin()">观众观看登录</button> -->
 </template>
 
 <script>
@@ -36,23 +36,23 @@
 				storeLogo: null,
 				storeId: null,
 				roomLists: [
-					{
-						"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
-						"roomCreator": "111031",
-						"custom": "{}",
-						"audienceCount": 99999,
-						"pushers": [{
-							"userName": "Wei xiao",
-							"userID": "111031",
-							"userAvatar": "http://tcloud.tjdami.com:32223/uploadfile/1592300212788.jpeg"
-						}],
-						"roomID": "111031",
-						"roomInfo": {"roomAvatar":"https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1592817969337&di=271b9b9d32d4e72a62831087d117ef38&imgtype=0&src=http%3A%2F%2Fa3.att.hudong.com%2F16%2F18%2F300000932954129238184537620_950.jpg","liveTitle":"这是一个直播的标题 应该是够长的 不够长也不能太长","storeAvatar":"https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1592818014508&di=6e89966fbf68b2cd4af8a4742880bc0a&imgtype=0&src=http%3A%2F%2Fa3.att.hudong.com%2F53%2F88%2F01200000023787136831885695277.jpg","storeName":"这是一个有点长的店铺名称","storeId":"57"}
-					},
 					// {
 					// 	"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
 					// 	"roomCreator": "111031",
-					// 	"custom": "{}",
+					// 	"custom": {"hotDegree":99999},
+					// 	"audienceCount": 0,
+					// 	"pushers": [{
+					// 		"userName": "Wei xiao",
+					// 		"userID": "111031",
+					// 		"userAvatar": "http://tcloud.tjdami.com:32223/uploadfile/1592300212788.jpeg"
+					// 	}],
+					// 	"roomID": "111031",
+					// 	"roomInfo": {"roomAvatar":"https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1592817969337&di=271b9b9d32d4e72a62831087d117ef38&imgtype=0&src=http%3A%2F%2Fa3.att.hudong.com%2F16%2F18%2F300000932954129238184537620_950.jpg","liveTitle":"这是一个直播的标题 应该是够长的 不够长也不能太长","storeAvatar":"https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1592818014508&di=6e89966fbf68b2cd4af8a4742880bc0a&imgtype=0&src=http%3A%2F%2Fa3.att.hudong.com%2F53%2F88%2F01200000023787136831885695277.jpg","storeName":"这是一个有点长的店铺名称","storeId":"57"}
+					// },
+					// {
+					// 	"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
+					// 	"roomCreator": "111031",
+					// 	"custom": {"hotDegree":8888},
 					// 	"audienceCount": 99999,
 					// 	"pushers": [{
 					// 		"userName": "Wei xiao",
@@ -65,7 +65,7 @@
 					// {
 					// 	"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
 					// 	"roomCreator": "111031",
-					// 	"custom": "{}",
+					// 	"custom": {"hotDegree":777},
 					// 	"audienceCount": 99999,
 					// 	"pushers": [{
 					// 		"userName": "Wei xiao",
@@ -78,7 +78,7 @@
 					// {
 					// 	"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
 					// 	"roomCreator": "111031",
-					// 	"custom": "{}",
+					// 	"custom": {"hotDegree":66},
 					// 	"audienceCount": 99999,
 					// 	"pushers": [{
 					// 		"userName": "Wei xiao",
@@ -91,7 +91,7 @@
 					// {
 					// 	"mixedPlayURL": "http://live.tjdami.com/live/1400384719_111031.flv",
 					// 	"roomCreator": "111031",
-					// 	"custom": "{}",
+					// 	"custom": {"hotDegree":5},
 					// 	"audienceCount": 99999,
 					// 	"pushers": [{
 					// 		"userName": "Wei xiao",
@@ -104,8 +104,8 @@
 				],
 				list: [],
 				isNewRenderDone: false ,//锁的作用
-				page: 0,
-				count: 5
+				listIndex: 0,
+				listCount: 50
 			}
 		},
 		onLoad() {
@@ -116,12 +116,6 @@
 			sdk.setLicence(licenceURL, licenceKey);
 			this.onClickPlayLogin()
 			this.getMyStore()
-			
-			// // 模拟首次加载列表数据
-			// setTimeout(() => {
-			// 	this.list = this.roomLists
-			// 	this.$refs.wfalls.init();
-			// }, 1000)
 		},
 		onShow() {
 			
@@ -134,14 +128,15 @@
 			uni.showLoading({
 				title: '正在加载更多'
 			})
-			sdkwx.getRoomList(this.page, this.count, res => {
+			console.log(this.listIndex, this.listCount)
+			sdkwx.getRoomList(this.listIndex, this.listCount, res => {
 				console.log(res);
 				if (res.code == 0) {
 					//显示房间列表
 					for (let s of res.data) {
 						s.roomInfo = JSON.parse(s.roomInfo)
+						s.custom = JSON.parse(s.custom)
 						s.audienceCount = s.audienceCount===undefined ? s.audiences.length : s.audienceCount
-						// s.roomInfo.roomAvatar = "http://5b0988e595225.cdn.sohucs.com/images/20180921/58ad30d1a5f741f6a8dc4b81820a0c50.jpeg"
 					}
 					this.list = this.roomLists.concat(res.data);
 					console.log(this.list)
@@ -149,63 +144,36 @@
 					setTimeout(() => {
 						this.$refs.wfalls.handleViewRender();
 					}, 0)
-					this.page = this.page + this.count
-					// setTimeout(() => {
-					// 	this.$refs.wfalls.init();
-					// }, 0)
-					// this.roomLists.pushers = JSON.parse(res.data.pushers)
+					this.listIndex = this.list.length
+					console.log(this.listIndex, this.listCount)
 				}
 			});
-			// 模拟分页请求 (加载更多)
-			// setTimeout(() => {
-			// 	const nextData = JSON.parse(JSON.stringify(this.list.slice(0, 10)))
-			// 	this.list.push(...nextData);
-			// 	// this.$nextTick(()=>{
-			// 	//     this.$refs.wfalls.handleViewRender();
-			// 	// })
-			// 	// APP上触发不了还是setTimeout万能
-			// 	setTimeout(() => {
-			// 		this.$refs.wfalls.handleViewRender();
-			// 	}, 0)
-			// }, 800)
 		},
 		onPullDownRefresh() {
-			this.page = 0
-			sdkwx.getRoomList(this.page, this.count, res => {
+			this.listIndex = 0
+			console.log(this.listIndex, this.listCount)
+			sdkwx.getRoomList(this.listIndex, this.listCount, res => {
 				console.log(res);
 				if (res.code == 0) {
 					//显示房间列表
 					for (let s of res.data) {
 						s.roomInfo = JSON.parse(s.roomInfo)
+						s.custom = JSON.parse(s.custom)
 						s.audienceCount = s.audienceCount===undefined ? s.audiences.length : s.audienceCount
-						// s.roomInfo.roomAvatar = "http://5b0988e595225.cdn.sohucs.com/images/20180921/58ad30d1a5f741f6a8dc4b81820a0c50.jpeg"
 					}
 					this.list = this.roomLists.concat(res.data);
 					console.log(this.list)
+					// this.$refs.wfalls.handleViewRender();
 					this.$refs.wfalls.init()
 					uni.stopPullDownRefresh()
 					uni.showToast({
 						title: '刷新成功',
 						icon: 'none'
 					})
-					this.page = this.page + this.count
-					// setTimeout(() => {
-					// 	this.$refs.wfalls.init();
-					// }, 0)
-					// this.roomLists.pushers = JSON.parse(res.data.pushers)
+					this.listIndex = this.list.length
+					console.log(this.listIndex, this.listCount)
 				}
 			});
-			// 模拟更新新数据
-			const newData = JSON.parse(JSON.stringify(this.list.slice(0, 10)))
-			setTimeout(() => {
-				this.list = newData;
-				this.$refs.wfalls.init()
-				uni.stopPullDownRefresh()
-				uni.showToast({
-					title: '刷新成功',
-					icon: 'none'
-				})
-			}, 800)
 		},
 		methods: {
 			getMyStore(){
@@ -237,31 +205,8 @@
 					}
 				});
 			},
-			onClickLiveLogin() {
-				//主播登录
-				// var uid = "test15";
-				// var sig =
-				// 	"eJwtzEELgjAYxvHvsnPINn1bEzpISSGDDllEt2BTX6QUt0yNvnuiHp-fA-8vSdXZa01DQsI9SlbTRm1eDjOc2BnrGCyP1eWjrlGTkAWU*ptAMDk-pquxMaMDAKeUzurwOZnkPgix5ksF8zFs42N1T*yn07xIM1WKVu3j7HLt4V308jRUyRDdZHSAXb4lvz9dzjIc";
-				// sdkwx.login({
-				// 	sdkAppID: "1400384719", //直播的appID
-				// 	userID: uid, //用户ID
-				// 	userName: "主播", //用户名称
-				// 	userAvatar: "", //用户头像
-				// 	userSig: sig //签名，参考腾讯官方文档
-				// }, function(res) {
-				// 	console.log(res);
-				// 	if (res.code == 0) {
-				// 		console.log("zhubo login success");
-				// 		console.log(res);
-				// 		uni.navigateTo({
-				// 			url: '/pages/txmlvb/live_menu'
-				// 		});
-				// 	} else {
-				// 		console.log("login failed! ", "errCode：" + res.code + ", errMsg:" + res.data);
-				// 	}
-				// });
-				// permision.judgeIosPermission("camera") //判断iOS上是否给予摄像头权限，有权限返回true，否则返回false
-				// permision.judgeIosPermission("record") //判断iOS上是否给予麦克风权限，有权限返回true，否则返回false
+			onClickLiveOpen() {
+				// 开直播
 				uni.navigateTo({
 					url: '/pages/txmlvb/live_menu'
 				});
@@ -275,19 +220,33 @@
 					console.log(res)
 					if (res) {
 						const sig = res.value
-						// var sig =
-						// 	"eJwtzNEKgjAYhuF72Wkh-*Y2p9ANlB6URnhYbM0-NYdJGtG9J9PD7-ng-ZIizYO36UlCWABk6zdq8xzwjp7HibLVX7q*OoeaJJQDhIpHNF4eMznszexCCAYAiw7YeosZj0KuxFpBO2c-7eZWpA23VWlKBfsaanl6nO1o8*aYCdlVnbSZvvQHuyO-P8gHMRQ_";
 						sdkwx.login({
 							sdkAppID: "1400384719", //直播的appID
 							userID: uni.getStorageSync('firmId'), //用户ID
 							userName: uni.getStorageSync('nickname'), //用户名称
 							userAvatar: uni.getStorageSync('portrait'), //用户头像
 							userSig: sig //签名，参考腾讯官方文档
-						}, res => {
-							if (res.code == 0) {
+						}, resL => {
+							if (resL.code == 0) {
 								console.log("login success",uni.getStorageSync('firmId'),uni.getStorageSync('nickname'));
-								console.log(res);
-								this.getRoomList(this.page, this.count)
+								// console.log(resL);
+								sdkwx.getRoomList(this.listIndex, this.listCount, resRL => {
+									console.log(resRL);
+									if (resRL.code == 0) {
+										//显示房间列表
+										for (let s of resRL.data) {
+											s.roomInfo = JSON.parse(s.roomInfo)
+											s.custom = JSON.parse(s.custom)
+											s.audienceCount = s.audienceCount===undefined ? s.audiences.length : s.audienceCount
+										}
+										this.list = this.roomLists.concat(resRL.data);
+										console.log(this.list)
+										this.$refs.wfalls.init();
+										this.listIndex = this.list.length
+										console.log(this.listIndex, this.listCount)
+									}
+								});
+								
 							} else {
 								console.log("login failed! ", "errCode：" + res.code + ", errMsg:" + res.data);
 								uni.showToast({
@@ -304,36 +263,6 @@
 					}
 				});
 			},
-			getRoomList(index, count) {
-				//获取房间列表
-				// var index = 0; //开始索引
-				// var count = 5; //房间个数
-				sdkwx.getRoomList(index, count, res => {
-					console.log(res);
-					if (res.code == 0) {
-						//显示房间列表
-						for (let s of res.data) {
-							s.roomInfo = JSON.parse(s.roomInfo)
-							s.audienceCount = s.audienceCount===undefined ? s.audiences.length : s.audienceCount
-							// s.roomInfo.roomAvatar = "http://5b0988e595225.cdn.sohucs.com/images/20180921/58ad30d1a5f741f6a8dc4b81820a0c50.jpeg"
-						}
-						this.list = this.roomLists.concat(res.data);
-						console.log(this.list)
-						this.$refs.wfalls.init();
-						this.page = index + count
-						// setTimeout(() => {
-						// 	this.$refs.wfalls.init();
-						// }, 0)
-						// this.roomLists.pushers = JSON.parse(res.data.pushers)
-					}
-				});
-			},
-			// onClickRoom(item) {
-			// 	//进入直播
-			// 	uni.navigateTo({
-			// 		url: '/pages/txmlvb/room?mixedPlayURL=' + item.mixedPlayURL + "&roomID=" + item.roomID
-			// 	});
-			// },
 			getLoadNum(num) {
 				console.log('共加载了:' + num);
 				!this.isNewRenderDone && uni.hideLoading()
@@ -354,6 +283,12 @@
 		background-color: #31b630 !important;
 	}
 
+	.no-live{
+		width: 100%;
+		padding-top: 50%;
+		color: #c0c0c0;
+		text-align: center;
+	}
 	.waterfall_cell {
 		padding: 30upx 0upx;
 	}

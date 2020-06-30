@@ -11,7 +11,8 @@
         "compilerVersion" : 3,
         "modules" : {
             "Share" : {},
-            "Push" : {}
+            "Push" : {},
+            "Speech" : {}
         },
         "statusbar" : {
             "immersed" : "none" // 是否沉浸式显示"none|suggestedDevice|supportedDevice"
@@ -67,7 +68,9 @@
                 "push" : {
                     "unipush" : {}
                 },
-                "speech" : {}
+                "speech" : {
+                    "ifly" : {}
+                }
             },
             "icons" : {
                 "android" : {

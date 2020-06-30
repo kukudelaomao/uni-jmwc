@@ -8,7 +8,7 @@
 <!-- 						<view class="live_icon">直播中</view> -->
 						<text class="store_live_title">{{item.roomInfo.liveTitle}}</text>
 						<view class="live_icon"><image class="live_icon_img" src="~@/static/live-video/lk_green.gif"></image></view>
-						<view class="live_people">热度&nbsp;{{item.audienceCount}}</view>
+						<view class="live_people">热度&nbsp;{{item.custom.hotDegree}}</view>
 						
 					</view>
 				</view>
@@ -41,7 +41,7 @@
                 this.viewList = [{list:[]},{list:[]}];
                 setTimeout(()=>{
                     this.handleViewRender(0,0)
-					console.log(this.viewList)
+					// console.log(this.viewList)
                 },0)
 				
             },
@@ -58,7 +58,7 @@
                     this.$emit('finishLoad',index)
                     return
                 };
-				console.log(this.viewList)
+				// console.log(this.viewList)
                 const query = uni.createSelectorQuery().in(this);
                 let listFlag = 0;
                 query.selectAll('#wf-list').boundingClientRect(data => {
@@ -69,7 +69,7 @@
                     //     this.viewList[flag].list.push(item)
                     // })
                 }).exec()
-				console.log(this.viewList)
+				// console.log(this.viewList)
             },
 			onClickRoom(item) {
 				console.log(item)
@@ -166,11 +166,15 @@
 		width: 300upx;
 		height: 80upx;
 		margin-bottom: 20upx;
-		lines: 2;
-		overflow: hidden;
-		text-overflow: ellipsis;  /* 超出部分省略号 */
 		margin-top: 20upx;
+/* 		lines: 2;
+		overflow: hidden;
+		text-overflow: ellipsis; 超出部分省略号 */
 		font-weight: bold;
+		display: -webkit-box; /*值必须为-webkit-box或者-webkit-inline-box*/
+		-webkit-box-orient: vertical; /*值必须为vertical*/
+		-webkit-line-clamp: 2; /*值为数字，表示一共显示几行*/
+		overflow: hidden;
 		/* background-color: rgba(100, 100, 100, 0.7); */
 	}
 	.store_icon_view{
@@ -189,9 +193,13 @@
 		font-size: 26upx;
 		line-height: 60upx;
 		text-align: center;
-		lines: 1;
+/* 		lines: 1;
 		overflow: hidden;
-		text-overflow: ellipsis;  /* 超出部分省略号 */
+		text-overflow: ellipsis; 超出部分省略号 */
 		padding: 0upx 10upx 0upx 20upx;
+		display: -webkit-box; /*值必须为-webkit-box或者-webkit-inline-box*/
+		-webkit-box-orient: vertical; /*值必须为vertical*/
+		-webkit-line-clamp: 1; /*值为数字，表示一共显示几行*/
+		overflow: hidden;
 	}
 </style>

@@ -5,10 +5,7 @@
 		</view> -->
 		<tx_live_room ref="liveView" :style="`width: 100%;height: ${screenHeight}px;`"></tx_live_room>
 		<tx_live_room ref="linkView" style="position:fixed;width:80px;height:120px;top:10px;right:10px"></tx_live_room>
-		<!-- <text class="but-begin-live" @click="onClickLive()">开始直播</text> -->
 		<!-- <button type="primary" style="position: fixed;top:130px; left:10px" @click="onClickGetAudienceList()">观众列表</button> -->
-		<!-- <button type="primary" style="position: fixed;bottom:130px; right:10px" @click="onClickSendMsg()">发送消息</button> -->
-		
 		<view>
 			<view class="arrow-boxs">
 				<image class="user-img" :src="storeAvatar"></image>
@@ -41,7 +38,7 @@
 
 			<!-- 这是商品弹窗 -->
 			<uni-popup ref="popup" type="bottom">
-				<good-list @setPrimary="setPrimary" :storeId="storeId"></good-list>
+				<good-list @setPrimary="setPrimary" :storeId="storeId" isStore="store"></good-list>
 			</uni-popup>
 			<!-- 这是退出提醒弹窗 -->
 			<uni-popup ref="popupClose" type="dialog">
@@ -49,7 +46,7 @@
 			</uni-popup>
 			<!-- 这是连麦请求弹窗 -->
 			<uni-popup ref="popupRequestJoin" type="dialog">
-				<uni-popup-dialog type="info" :content="joinContent" @confirm="confirmJoin" @close="closeJoin"></uni-popup-dialog>
+				<uni-popup-dialog type="info" :content="joinContent" @confirm="confirmJoin" before-close="true" @close="closeJoin"></uni-popup-dialog>
 			</uni-popup>
 		</view>
 	</div>
@@ -89,7 +86,8 @@
 				storeId: '57',
 				// storeId: uni.getStorageSync('storeId'),
 				isJoin: false,	// 是否在连麦状态
-				tmpData: null	// 连麦数据临时存放
+				tmpData: null, // 连麦数据临时存放
+				timer: null
 			}
 		},
 		computed:{
@@ -112,9 +110,7 @@
 					return;
 				}
 				if (res.type == "onRequestJoinAnchor") { //处理连麦请求
-					that.$refs.popupRequestJoin.open();
-					that.tmpData = res.data
-					// that.onRequestJoinAnchor(res.data);
+					that.onRequestJoinAnchor(res.data);
 				} else if (res.type == "onAnchorEnter") { //观众加入连麦
 					that.onAnchorEnter(res.data);
 				} else if (res.type == "onAnchorExit") { //连麦退出
@@ -127,15 +123,6 @@
 					that.onRecvRoomTextMsg(res.data);
 					console.log("我收到消息了");
 				} else if (res.type == "onRecvRoomCustomMsg") { //自定义消息
-					var cmd = res.data.cmd;
-					if (cmd == "onAudienceEnter") {
-						console.log(res.data.message);
-						that.hotDegree = that.hotDegree + 1
-						console.log(that.hotDegree)
-					} else if (cmd == "onAudienceExit") {
-						console.log(res.data.message);
-						that.hotDegree = that.hotDegree - 1
-					}
 					that.onRecvRoomCustomMsg(res.data);
 				}
 			});
@@ -169,7 +156,7 @@
 					liveTitle: this.liveTitle,
 					storeAvatar: uni.getStorageSync('storeLogo'),
 					storeName: uni.getStorageSync('storeName'),
-					storeId: uni.getStorageInfoSync('storeId')
+					storeId: uni.getStorageSync('storeId')
 				}; //房间信息
 				var roomInfo = JSON.stringify(roomInfoJson)
 				console.log("start createRoom",roomInfo);
@@ -177,6 +164,9 @@
 					console.log(res);
 					if (res.code == 0) {
 						console.log("createRoom success");
+						sdkwx.setCustomInfo(0,'hotDegree',0,function(res){
+							console.log(res)
+						})
 					}
 				});
 			},
@@ -217,30 +207,36 @@
 			},
 			confirmJoin(done){
 				this.$refs.popupRequestJoin.close();
+				clearTimeout(this.timer)
 				let userID = this.tmpData.anchorInfo.userID;
-				let reason = this.tmpData.reason;
-				sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
+				let reason = '主播同意连麦';
+				sdkwx.responseJoinAnchor(userID, true, reason, function(res) {
 					console.log(res);
 				})
 				this.isJoin = true
 			},
 			closeJoin(done){
 				this.$refs.popupRequestJoin.close();
+				clearTimeout(this.timer)
 				let userID = this.tmpData.anchorInfo.userID;
-				let reason = this.tmpData.reason;
+				let reason = '主播拒绝连麦';
 				sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
 					console.log(res);
 				})
 				this.isJoin = false
 			},
-			// onRequestJoinAnchor(data) {
-			// 	var userID = data.anchorInfo.userID;
-			// 	var reason = data.reason;
-			// 	//主播同意连麦
-			// 	sdkwx.responseJoinAnchor(userID, true, reason, function(res) {
-			// 		console.log(res);
-			// 	})
-			// },
+			countSecClose(){
+				let that = this
+				this.timer = setTimeout(function(){
+					that.$refs.popupRequestJoin.close()
+					that.closeJoin()
+				},6000)
+			},
+			onRequestJoinAnchor(data) {
+				this.$refs.popupRequestJoin.open();
+				this.countSecClose()
+				this.tmpData = data
+			},
 			onAnchorEnter(data) {
 				var linkView = this.$refs.linkView;
 				//开启远程连麦
@@ -252,20 +248,21 @@
 				var linkView = this.$refs.linkView;
 				//停止远程视频view
 				linkView.stopRemoteView();
+				this.isJoin = false
 			},
 			onAudienceEnter(data) {
 				// this.chatList.push({
 				// 	name: data.userName,
 				// 	text: data.message
 				// })
-				this.hotDegree = this.hotDegree + 1
+				// this.hotDegree = this.hotDegree + 1
 			},
 			onAudienceExit(data) {
 				// this.chatList.push({
 				// 	name: data.userName,
 				// 	text: data.message
 				// })
-				this.hotDegree = this.hotDegree - 1
+				// this.hotDegree = this.hotDegree - 1
 			},
 			onRecvRoomTextMsg(data) {
 				this.chatList.push({
@@ -274,7 +271,22 @@
 				})
 			},
 			onRecvRoomCustomMsg(data) {
-
+				var cmd = data.cmd;
+				if (cmd == "onAudienceEnter") {
+					console.log(data.message);
+					this.hotDegree = this.hotDegree + 1
+					sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+						console.log(res)
+					})
+					console.log(this.hotDegree)
+				} else if (cmd == "onAudienceExit") {
+					console.log(data.message);
+					this.hotDegree = this.hotDegree - 1
+					sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+						console.log(res)
+					})
+					console.log(this.hotDegree)
+				}
 			},
 			onClickExitAnchor() {
 				var linkView = this.$refs.linkView;
@@ -320,7 +332,10 @@
 			},
 			setPrimary(it){
 				console.log(it)
-				sdkwx.setCustomInfo(this.roomId,'MLVBCommonDef.CustomFieldOp#SET','primaryGood',it.goodsGroupId,function(res){
+				sdkwx.setCustomInfo(0,'primaryGood',it.goodsGroupId,function(res){
+					console.log(res)
+				})
+				sdkwx.setCustomInfo(0,'primaryGoodCoverImg',it.goodsGroupCoverImageUrl,function(res){
 					console.log(res)
 				})
 			}

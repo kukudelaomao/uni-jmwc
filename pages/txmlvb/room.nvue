@@ -13,9 +13,9 @@
 					<text class="text-box">热度&nbsp;&nbsp;{{hotDegree}}</text>
 				</view>
 				<image class="close_btn" @click="onClickExitRoom()" src="~@/static/live-video/close.png"></image>
-				<view class="good_primary">
-					<image class="good_primary_icon" src="~@/static/live-video/goods_hot_fill.png" @click="gotoDetail()"></image>
-					<text class="good_primary_text">推荐</text>
+				<view class="good_primary" v-if="primaryGoodCoverImg">
+					<image class="good_primary_icon" :src="primaryGoodCoverImg" @click="gotoPrimaryDetail()"></image>
+					<text class="good_primary_text">推&nbsp;&nbsp;荐</text>
 				</view>
 				<view class="exit_audio_live" v-if="!isJoin">
 					<image class="exit_audio_live_icon" src="~@/static/live-video/voice.png" @click="onClickJoinAnchor()"></image>
@@ -47,14 +47,10 @@
 			
 			<!-- 这是商品弹窗 -->
 			<uni-popup ref="popup" type="bottom">
-				<good-list :storeId="storeId"></good-list>
+				<good-list :storeId="storeId" isStore="notStore"></good-list>
 			</uni-popup>
 		
 		</view>
-		<!-- <text class="but-base" style="position: fixed;top: 80px; right:10px" @click="onClickJoinAnchor()">请求连麦</text> -->
-		<!-- <text class="but-base" style="position: fixed;top: 180px; right:10px" @click="onClickExitAnchor()">退出连麦</text> -->
-		<!-- <text class="but-base" style="position: fixed;bottom:30px; left:10px" @click="onClickSendMsg()">发送消息</text> -->
-		<!-- <text class="but-base" style="position: fixed;bottom:80px; left:10px" @click="onClickExitRoom()">退出房间</text> -->
 	</view>
 </template>
 
@@ -67,6 +63,7 @@
 	import chatView from './chat_view.vue'
 	import goodList from './good_list_view.vue'
 	import likeButton from '@/components/like-button/like-button.vue'
+	import permision from "@/js_sdk/wa-permission/permission.js"
 	export default {
 		components: {
 			uniPopup,
@@ -89,7 +86,9 @@
 				mTextFocus: false,
 				hotDegree: 0,
 				showImgs: ['../../static/live-video/favor_fill.png','../../static/live-video/crown_fill.png', '../../static/live-video/cart_fill.png', '../../static/live-video/choiceness_fill.png'],
-				isJoin: false
+				isJoin: false,
+				primaryGood: null,
+				primaryGoodCoverImg: ''
 			}
 		},
 		onLoad: function(option) {
@@ -102,10 +101,10 @@
 			//设置事件回调
 			var that = this;
 			sdkwx.setListener(function(res){
+				console.log(res);//通过res.type == 'onXXX' 判断回调方法
 				if (res.type == "onDebugLog") {
 					return;
 				}
-				console.log(res);//通过res.type == 'onXXX' 判断回调方法
 				if (res.type == "onAnchorExit") {
 					that.onAnchorExit(res.data);
 				} else if (res.type == "onKickoutJoinAnchor") {
@@ -124,8 +123,8 @@
 		},
 		mounted() {
 			this.enterRoom()
-			this.hotDegree = this.hotDegree + 1
-			this.getPrimary()
+			// this.hotDegree = this.hotDegree + 1
+			// this.getPrimary()
 		},
 		onUnload() {
 			// this.onClickExitRoom()
@@ -145,6 +144,7 @@
 				var roomView = this.$refs.roomView;
 				console.log(this.roomID)
 				//进入房间
+				const that = this
 				roomView.enterRoom(this.roomID, function(res){
 					console.log(res);
 					if(res.code!==0){
@@ -153,6 +153,7 @@
 							icon: 'none'
 						})
 					}
+					that.getPrimary()
 					//进入房间成功发送一条自定义消息
 					let enterMsg = uni.getStorageSync('nickname') + " 进入房间了"
 					sdkwx.sendRoomCustomMsg("onAudienceEnter", enterMsg, function(res2){
@@ -187,10 +188,54 @@
 			onAudienceExit(data) {
 				this.hotDegree = this.hotDegree - 1
 			},
-			onClickJoinAnchor() {
+			async onClickJoinAnchor() {
+				console.log(1)
+				let camera = ''
+				let audio = ''
+				switch(uni.getSystemInfoSync().platform){
+				    case 'android':
+				       console.log('运行Android上')
+					   camera = await permision.requestAndroidPermission('android.permission.CAMERA')
+					   audio = await permision.requestAndroidPermission('android.permission.RECORD_AUDIO')
+					   console.log(camera,audio)
+					   if(camera!==1 || audio!==1){
+					   	uni.showToast({
+					   		title: "连麦需获取设备摄像头和音频权限",
+					   		icon: "none",
+					   		duration: 3000
+					   	});
+					   	return
+					   }
+				       break;
+				    case 'ios':
+				       console.log('运行iOS上')
+					   camera = await permision.judgeIosPermission("camera")
+					   audio = await permision.judgeIosPermission("record")
+					   console.log(camera,audio)
+					  //  if(camera!==1 || audio!==1){
+							// uni.showModal({
+					  //  	        content: "连麦需获取设备摄像头和音频权限",
+					  //  	        confirmText: "去设置",
+							// 	success: function (res) {
+							// 	        if (res.confirm) {
+							// 	            console.log('用户点击确定');
+							// 				permision.gotoAppPermissionSetting()
+							// 	        } else if (res.cancel) {
+							// 	            console.log('用户点击取消');
+							// 	        }
+							// 	    }
+					  //  	    });
+					  //  	return
+					  //  }
+				       break;
+				    default:
+				       console.log('运行在开发者工具上')
+				       break;
+				}
 				var linkView = this.$refs.linkView;
 				//请求连麦
 				let joinMsg = uni.getStorageSync('nickname') + " 请求连麦"
+				let that = this
 				sdkwx.requestJoinAnchor(joinMsg, function(res){
 					console.log(res);
 					if (res.code == 0) {//接收
@@ -199,22 +244,33 @@
 						//加入连麦
 						sdkwx.joinAnchor(function(res2){
 							console.log('连麦结果', res2);
-							uni.showToast({
-								title: '连麦成功',
-								icon: 'none'
-							})
-							this.isJoin = true
+							if(res2.code===0){
+								uni.showToast({
+									title: '连麦成功',
+									icon: 'none'
+								})
+								that.isJoin = true
+							}else{
+								uni.showToast({
+									title: '连麦失败',
+									icon: 'none'
+								})
+								that.isJoin = false
+								that.onClickExitAnchor()
+							}
 						});
 					} else if (res.code == -8) {//拒绝
 						uni.showToast({
 							title: '连麦请求被拒绝',
 							icon: 'none'
 						})
+						that.isJoin = false
 					} else {//错误超时
 						uni.showToast({
 							title: '连麦请求超时或错误',
 							icon: 'none'
 						})
+						that.isJoin = false
 					}
 				});
 			},
@@ -222,21 +278,32 @@
 				var linkView = this.$refs.linkView;
 				//停止远程视频view
 				linkView.stopRemoteView();
+				this.isJoin = false
 			},
 			onKickoutJoinAnchor(data){
 				var linkView = this.$refs.linkView;
 				//停止本地视频
 				linkView.stopLocalPreview();
+				this.isJoin = false
 			},
 			onClickExitAnchor() {
 				//退出连麦
 				var linkView = this.$refs.linkView;
+				let that = this
+				console.log(11)
 				sdkwx.quitJoinAnchor(function(res){
 					//停止本地视频
+					console.log(22)
 					linkView.stopLocalPreview();
 					console.log("quitJoinAnchor", res);
-					this.isJoin = false
+					that.isJoin = false
 				});
+				//停止本地视频
+				console.log(22)
+				linkView.stopLocalPreview();
+				console.log("~quitJoinAnchor");
+				that.isJoin = false
+				console.log(33)
 			},
 			messageInput(event) {
 				this.message = event.detail.value
@@ -274,11 +341,23 @@
 				console.log('666!')
 			},
 			getPrimary(){
-				console.log(3)
-				sdkwx.getCustomInfo(this.roomId,function(res){
+				let that = this
+				sdkwx.getCustomInfo(function(res){
 					console.log(res)
+					if(res.code===0){
+						const data = res.data
+						that.primaryGood = data.primaryGood
+						that.primaryGoodCoverImg = data.primaryGoodCoverImg
+						that.hotDegree = data.hotDegree
+					}
 				})
-			}
+			},
+			gotoPrimaryDetail(){
+				uni.navigateTo({
+					url: '/pages/main-webview/main-webview?goodsId=' + this.primaryGood
+					// url: '/pages/main-webview/main-webview?goodsId=55',
+				})
+			},
 		}
 	}
 </script>
@@ -323,18 +402,19 @@
 		top: 230rpx;
 		left: 30rpx;
 		/* background-color: #000000; */
-		border-color: #000000;
-		border-width: 1rpx;
+		/* border-color: #ffffff; */
+		/* border-width: 1rpx; */
 	}
 	
 	.good_primary_icon {
-		width: 100rpx;
-		height: 100rpx;
-		margin-bottom: 10rpx;
+		width: 110rpx;
+		height: 110rpx;
+		margin-bottom: 15rpx;
+		border-radius: 15rpx;
 	}
 	
 	.good_primary_text {
-		font-size: 28rpx;
+		font-size: 26rpx;
 		text-align: center;
 	}
 	

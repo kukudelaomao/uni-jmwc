@@ -6,16 +6,15 @@
 		<scroll-view style="width: 100%;" :scroll-top="scrollTop" scroll-y="true" class="scroll-Ys">
 			<view class="shop-list-list" v-for="(it,i) in shopArr" :key='i'>
 				<view>
-					
 					<image class="shop-list-img" :src="it.goodsGroupCoverImageUrl"></image>
-					<uni-badge class="img-badge" :text="i+1"></uni-badge>
+					<uni-badge class="img-badge" :text="shopArr.length-i"></uni-badge>
 				</view>
 				<view class="shop-text-view">
 					<text class="shop-list-title">{{it.goodsGroupName}}</text>
 					<text class="shop-list-num">已售{{it.goodsGroupSalesAmount}}件</text>
 					<text class="shop-list-price">￥{{it.minProductPrice}}</text>
-					<text class="shop-list-btn" @click="gotoDetail(it)">去看看</text>
-					<text class="shop-list-zhutuiBtn" @click="setPrimary(it)">设为主推</text>
+					<text v-if="isStore==='notStore'" class="shop-list-btn" @click="gotoDetail(it)">去看看</text>
+					<text v-else class="shop-list-zhutuiBtn" @click="setPrimary(it)">设为主推</text>
 				</view>
 			</view>
 		</scroll-view>
@@ -31,13 +30,17 @@
 			storeId: {
 				type: [String, Number], //实际请求获取的列表数据
 				default: ''
+			},
+			isStore: {
+				type: String, //实际请求获取的列表数据
+				default: 'notStore'
 			}
 		},
 		data() {
 			return {
 				scrollTop: 0,
 				totalElements: 0,
-				shopArr: [],
+				shopArr: []
 			}
 		},
 		mounted() {
@@ -156,7 +159,7 @@
 	}
 	.shop-list-zhutuiBtn{
 		position: absolute;
-		bottom: 80rpx;
+		bottom: 0rpx;
 		right: 0rpx;
 		width: 140rpx;
 		height: 60rpx;
