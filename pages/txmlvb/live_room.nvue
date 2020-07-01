@@ -83,8 +83,8 @@
 				hotDegree: 0,
 				storeAvatar: uni.getStorageSync('storeLogo'),
 				storeName: uni.getStorageSync('storeName'),
-				storeId: '57',
-				// storeId: uni.getStorageSync('storeId'),
+				// storeId: '57',
+				storeId: uni.getStorageSync('storeId'),
 				isJoin: false,	// 是否在连麦状态
 				tmpData: null, // 连麦数据临时存放
 				timer: null

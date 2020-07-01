@@ -28,12 +28,27 @@
 		// }
 		onReady() {
 			// #ifdef APP-PLUS
-			// var pages = getCurrentPages();
-			// var page = pages[pages.length - 1];
-			// var currentWebview = page.$getAppWebview(); //页面栈最顶层就是当前webview  
-			// // 获取webview的children，有了子webview对象后，可以用5+丰富的api来进行前进、后退、拦截资源、禁用schema跳转、注入js等各种操作。具体参考https://www.html5plus.org/doc/zh_cn/webview.html
-			// var currentWebviewChild = currentWebview.children()
-			// console.log(currentWebviewChild[0].getURL())
+			var pages = getCurrentPages();
+			var page = pages[pages.length - 1];
+			var currentWebview = page.$getAppWebview(); //页面栈最顶层就是当前webview  
+			// 获取webview的children，有了子webview对象后，可以用5+丰富的api来进行前进、后退、拦截资源、禁用schema跳转、注入js等各种操作。具体参考https://www.html5plus.org/doc/zh_cn/webview.html
+			var currentWebviewChild = currentWebview.children()
+			console.log(currentWebviewChild[0].getURL())
+			
+			// 不太好的广告界面
+			// let view = new plus.nativeObj.View('test',
+			// 	{top:'0px',left:'0px',height:'100%',width:'100%'},
+			// 	[
+			// 		{tag:'img',id:'imgBg',src:'static/colorBg.png',position:{top:'0',left:'0',width:'100%',height:'100%'}},
+			// 		{tag:'img',id:'img',src:'static/jmwc.png',position:{top:'30%',left:'25%',width:'50%',height:'auto'}},
+			// 		{tag:'img',id:'imgSec',src:'static/second3.gif',position:{top:'10px',right:'10px',height:'44px',width:'44px'}}
+			// 		// {tag:'rect',id:'rect',color:'#FF0000',position:{top:'0px',left:'0px',width:'100%',height:'1px'}},
+			// 		// {tag:'font',id:'font',text:'原生控件',textStyles:{size:'18px'},}
+			// 	]);
+			// view.show();
+			// setTimeout(()=>{
+			// 	view.close();
+			// }, 3000)
 			
 			// 使用偏移位置调整状态栏样式
 			// const currentWebview = this.$scope.$getAppWebview() //此对象相当于html5plus里的plus.webview.currentWebview()。在uni-app里vue页面直接使用plus.webview.currentWebview()无效，非v3编译模式使用this.$mp.page.$getAppWebview()

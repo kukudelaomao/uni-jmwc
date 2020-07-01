@@ -2,8 +2,8 @@
     "name" : "聚米为川",
     "appid" : "__UNI__0503A5A",
     "description" : "大米 测试 APP",
-    "versionName" : "1.0.1",
-    "versionCode" : 101,
+    "versionName" : "1.0.2",
+    "versionCode" : 102,
     "transformPx" : false,
     "fullscreen" : false, // 是否全屏
     "app-plus" : {
@@ -103,6 +103,13 @@
                         "spotlight@3x" : "unpackage/res/icons/120x120.png"
                     }
                 }
+            },
+            "splashscreen" : {
+                "android" : {
+                    "xxhdpi" : "",
+                    "xhdpi" : "",
+                    "hdpi" : ""
+                }
             }
         },
         "nativePlugins" : {
@@ -127,6 +134,10 @@
                     }
                 }
             }
+        },
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : true
         }
     },
     "quickapp" : {},
