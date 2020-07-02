@@ -175,7 +175,7 @@
 		-webkit-box-orient: vertical; /*值必须为vertical*/
 		-webkit-line-clamp: 2; /*值为数字，表示一共显示几行*/
 		overflow: hidden;
-		/* background-color: rgba(100, 100, 100, 0.7); */
+		background-color: rgba(100, 100, 100, 0.3);
 	}
 	.store_icon_view{
 		width: 60upx;

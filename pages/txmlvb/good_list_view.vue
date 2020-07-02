@@ -14,7 +14,8 @@
 					<text class="shop-list-num">已售{{it.goodsGroupSalesAmount}}件</text>
 					<text class="shop-list-price">￥{{it.minProductPrice}}</text>
 					<text v-if="isStore==='notStore'" class="shop-list-btn" @click="gotoDetail(it)">去看看</text>
-					<text v-else class="shop-list-zhutuiBtn" @click="setPrimary(it)">设为主推</text>
+					<text v-else-if="isStore==='store'&&currencyPrimaryGoodsId!==it.goodsGroupId" class="shop-list-zhutuiBtn" @click="setPrimary(it)">设为主推</text>
+					<text v-else-if="isStore==='store'&&currencyPrimaryGoodsId===it.goodsGroupId" class="shop-list-zhutuiBtn currencyZhutui">当前主推</text>
 				</view>
 			</view>
 		</scroll-view>
@@ -34,6 +35,10 @@
 			isStore: {
 				type: String, //实际请求获取的列表数据
 				default: 'notStore'
+			},
+			currencyPrimaryGoodsId: {
+				type: String, //实际请求获取的列表数据
+				default: ''
 			}
 		},
 		data() {
@@ -170,6 +175,10 @@
 		background-color: #34b930;
 		border-radius: 30upx;
 		border-color: #34b930;
+	}
+	.currencyZhutui{
+		background-color: #FD7400;
+		border-color: #FD7400;
 	}
 	
 	.shop-list-box {

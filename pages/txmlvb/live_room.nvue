@@ -38,7 +38,7 @@
 
 			<!-- 这是商品弹窗 -->
 			<uni-popup ref="popup" type="bottom">
-				<good-list @setPrimary="setPrimary" :storeId="storeId" isStore="store"></good-list>
+				<good-list @setPrimary="setPrimary" :storeId="storeId" :currencyPrimaryGoodsId="currencyPrimaryGoodsId" isStore="store"></good-list>
 			</uni-popup>
 			<!-- 这是退出提醒弹窗 -->
 			<uni-popup ref="popupClose" type="dialog">
@@ -88,7 +88,8 @@
 				isJoin: false,	// 是否在连麦状态
 				tmpData: null, // 连麦数据临时存放
 				timer: null,
-				likeValue: 0
+				likeValue: 0,
+				currencyPrimaryGoodsId: 0
 			}
 		},
 		computed:{
@@ -132,7 +133,7 @@
 			this.onClickLive()
 			setInterval(()=>{
 				this.timedTask()
-			},20000)
+			},10000)
 		},
 		// onUnload() {
 		beforeDestroy() {
@@ -227,7 +228,7 @@
 				this.$refs.popupRequestJoin.close();
 				clearTimeout(this.timer)
 				let userID = this.tmpData.anchorInfo.userID;
-				let reason = '主播拒绝连麦';
+				let reason = '主播取消连麦';
 				sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
 					console.log(res);
 				})
@@ -241,9 +242,14 @@
 				},6000)
 			},
 			onRequestJoinAnchor(data) {
-				this.$refs.popupRequestJoin.open();
-				this.countSecClose()
-				this.tmpData = data
+				if(this.isJoin === false){
+					this.$refs.popupRequestJoin.open();
+					this.tmpData = data
+					this.countSecClose()
+				}else{
+					this.tmpData = data
+					this.closeJoin()
+				}
 			},
 			onAnchorEnter(data) {
 				var linkView = this.$refs.linkView;
@@ -283,16 +289,16 @@
 				if (cmd == "onAudienceEnter") {
 					console.log(data.message);
 					this.hotDegree = this.hotDegree + 1
-					sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
-						console.log(res)
-					})
+					// sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+					// 	console.log(res)
+					// })
 					console.log(this.hotDegree)
 				} else if (cmd == "onAudienceExit") {
 					console.log(data.message);
 					this.hotDegree = this.hotDegree - 1
-					sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
-						console.log(res)
-					})
+					// sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+					// 	console.log(res)
+					// })
 					console.log(this.hotDegree)
 				} else if(cmd == "onClickLike"){
 					console.log(data.message);
@@ -351,18 +357,33 @@
 			},
 			setPrimary(it){
 				console.log(it)
+				this.currencyPrimaryGoodsId = it.goodsGroupId
 				sdkwx.setCustomInfo(0,'primaryGood',it.goodsGroupId,function(res){
 					console.log(res)
 				})
 				sdkwx.setCustomInfo(0,'primaryGoodCoverImg',it.goodsGroupCoverImageUrl,function(res){
 					console.log(res)
 				})
+				
+				sdkwx.sendRoomCustomMsg("onSetPrimaryGood", it.goodsGroupId, function(res3){
+					console.log(res3);
+				});
+				sdkwx.sendRoomCustomMsg("onSetPrimaryGoodCoverImg", it.goodsGroupCoverImageUrl, function(res4){
+					console.log(res4);
+				});
 			},
 			timedTask(){
 				sdkwx.setCustomInfo(0,'likeValue',this.likeValue,function(res){
 					console.log(res)
 				})
 				sdkwx.sendRoomCustomMsg("onLikeAdd", this.likeValue, function(res2){
+					console.log(res2);
+				});
+				
+				sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+					console.log(res)
+				})
+				sdkwx.sendRoomCustomMsg("onhotDegreeChange", this.hotDegree, function(res2){
 					console.log(res2);
 				});
 			}

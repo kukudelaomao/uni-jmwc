@@ -41,7 +41,7 @@
 				<!-- <image class="but-img but-meiyan" src="~@/static/live-video/meiyan_white.png" @click="openmeiyan"></image> -->
 				<!-- <image class="but-img but-qiehuan" src="~@/static/live-video/camera_rotate_white.png" @click="switchCamera"></image> -->
 				<!-- <image class="but-img but-dianzan" src="~@/static/live-video/appreciate_fill.png"></image> -->
-				<like-button class="but-dianzan" :showImgs="showImgs" src="../../static/live-video/appreciate_fill_white.png" @handleClick="clickLike" width="80" height="80" imgWidth="80" imgHeight="80"></like-button>
+				<like-button ref="likeBtn" class="but-dianzan" :showImgs="showImgs" src="../../static/live-video/appreciate_fill_white.png" @handleClick="clickLike" width="80" height="80" imgWidth="80" imgHeight="80"></like-button>
 				<uni-badge class="img-badge" :text="likeValue" type="success" size="small"></uni-badge>
 				
 			</view>
@@ -168,12 +168,14 @@
 							icon: 'none'
 						})
 					}
-					that.getPrimary()
+					
 					//进入房间成功发送一条自定义消息
 					let enterMsg = uni.getStorageSync('nickname') + " 进入房间了"
 					sdkwx.sendRoomCustomMsg("onAudienceEnter", enterMsg, function(res2){
 						console.log(res2);
 					});
+					
+					that.getPrimary()
 				});
 			},
 			onClickExit() {
@@ -198,10 +200,10 @@
 				});
 			},
 			onAudienceEnter(data) {
-				this.hotDegree = this.hotDegree + 1
+				// this.hotDegree = this.hotDegree + 1
 			},
 			onAudienceExit(data) {
-				this.hotDegree = this.hotDegree - 1
+				// this.hotDegree = this.hotDegree - 1
 			},
 			async onClickJoinAnchor() {
 				console.log(1)
@@ -372,7 +374,32 @@
 				// 	console.log(this.hotDegree)
 				if(cmd == "onLikeAdd"){
 					console.log(data.message);
-					this.likeValue = parseInt(data.message)>parseInt(this.likeValue)?data.message:this.likeValue
+					if(parseInt(data.message)>parseInt(this.likeValue)){
+						this.likeValue = data.message
+						this.likeAnimation(parseInt(data.message)>parseInt(this.likeValue))
+					}					
+				}
+				if(cmd == "onSetPrimaryGood"){
+					console.log(data.message);
+					this.primaryGood = data.message
+				}
+				if(cmd == "onSetPrimaryGoodCoverImg"){
+					console.log(data.message);
+					this.primaryGoodCoverImg = data.message
+				}
+				if(cmd == "onhotDegreeChange"){
+					console.log(data.message);
+					this.hotDegree = data.message
+				}
+			},
+			likeAnimation(num){
+				for (var i = 0; i < parseInt(num); i++) {
+					setTimeout(()=>{
+						this.$refs.likeBtn.handleClick({
+							"type": "mockClick",
+							"timeStamp": new Date().getTime()
+						})
+					},300*i)
 				}
 			},
 			openMark() {
@@ -395,7 +422,7 @@
 						const data = res.data
 						that.primaryGood = data.primaryGood
 						that.primaryGoodCoverImg = data.primaryGoodCoverImg
-						that.hotDegree = data.hotDegree + 1
+						that.hotDegree = data.hotDegree
 						that.likeValue = data.likeValue ? parseInt(data.likeValue) : 0
 					}
 				})
