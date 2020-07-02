@@ -17,11 +17,15 @@
 					<image class="good_primary_icon" :src="primaryGoodCoverImg" @click="gotoPrimaryDetail()"></image>
 					<text class="good_primary_text">推&nbsp;&nbsp;荐</text>
 				</view>
-				<view class="exit_audio_live" v-if="!isJoin">
+				<view class="exit_audio_live" v-if="isJoin==='Begin'">
 					<image class="exit_audio_live_icon" src="~@/static/live-video/voice.png" @click="onClickJoinAnchor()"></image>
 					<text class="exit_audio_live_text">请求连麦</text>
 				</view>
-				<view class="exit_audio_live" v-if="isJoin">
+				<view class="exit_audio_live" v-if="isJoin==='Waiting'">
+					<image class="exit_audio_live_icon" src="~@/static/live-video/more.png"></image>
+					<text class="exit_audio_live_text">等待连麦</text>
+				</view>
+				<view class="exit_audio_live" v-if="isJoin==='End'">
 					<image class="exit_audio_live_icon" src="~@/static/live-video/voice_fill.png" @click="onClickExitAnchor()"></image>
 					<text class="exit_audio_live_text">退出连麦</text>
 				</view>
@@ -37,11 +41,13 @@
 				<!-- <image class="but-img but-meiyan" src="~@/static/live-video/meiyan_white.png" @click="openmeiyan"></image> -->
 				<!-- <image class="but-img but-qiehuan" src="~@/static/live-video/camera_rotate_white.png" @click="switchCamera"></image> -->
 				<!-- <image class="but-img but-dianzan" src="~@/static/live-video/appreciate_fill.png"></image> -->
-				<like-button class="but-dianzan" :showImgs="showImgs" src="../../static/live-video/appreciate_fill.png" @handleClick="clickLike"></like-button>
+				<like-button class="but-dianzan" :showImgs="showImgs" src="../../static/live-video/appreciate_fill_white.png" @handleClick="clickLike" width="80" height="80" imgWidth="80" imgHeight="80"></like-button>
+				<uni-badge class="img-badge" :text="likeValue" type="success" size="small"></uni-badge>
+				
 			</view>
 
 			<view v-if="messageTextVisable">
-				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput"/>
+				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput" :value="message"/>
 				<text class="but-textarea-confirm" @click="onClickSendMsg">发送</text>
 			</view>
 			
@@ -63,6 +69,7 @@
 	import chatView from './chat_view.vue'
 	import goodList from './good_list_view.vue'
 	import likeButton from '@/components/like-button/like-button.vue'
+	import uniBadge from "@/components/uni-badge/uni-badge.vue"
 	import permision from "@/js_sdk/wa-permission/permission.js"
 	export default {
 		components: {
@@ -71,7 +78,8 @@
 			uniPopupDialog,
 			chatView,
 			goodList,
-			likeButton
+			likeButton,
+			uniBadge
 		},
 		data() {
 			return {
@@ -86,9 +94,11 @@
 				mTextFocus: false,
 				hotDegree: 0,
 				showImgs: ['../../static/live-video/favor_fill.png','../../static/live-video/crown_fill.png', '../../static/live-video/cart_fill.png', '../../static/live-video/choiceness_fill.png'],
-				isJoin: false,
+				isJoin: 'Begin',
 				primaryGood: null,
-				primaryGoodCoverImg: ''
+				primaryGoodCoverImg: '',
+				likeValue: 0,
+				likeValueTmp: 0
 			}
 		},
 		onLoad: function(option) {
@@ -118,11 +128,16 @@
 					that.onAudienceEnter(res.data);
 				} else if (res.type == "onAudienceExit") { //观众退出
 					that.onAudienceExit(res.data);
-				} 
+				} else if (res.type == "onRecvRoomCustomMsg") { //自定义消息
+					that.onRecvRoomCustomMsg(res.data);
+				}
 			});
 		},
 		mounted() {
 			this.enterRoom()
+			setInterval(()=>{
+				this.timedTask()
+			},10000)
 			// this.hotDegree = this.hotDegree + 1
 			// this.getPrimary()
 		},
@@ -232,6 +247,7 @@
 				       console.log('运行在开发者工具上')
 				       break;
 				}
+				this.isJoin = "Waiting"
 				var linkView = this.$refs.linkView;
 				//请求连麦
 				let joinMsg = uni.getStorageSync('nickname') + " 请求连麦"
@@ -249,13 +265,13 @@
 									title: '连麦成功',
 									icon: 'none'
 								})
-								that.isJoin = true
+								that.isJoin = 'End'
 							}else{
 								uni.showToast({
 									title: '连麦失败',
 									icon: 'none'
 								})
-								that.isJoin = false
+								that.isJoin = 'Begin'
 								that.onClickExitAnchor()
 							}
 						});
@@ -264,13 +280,13 @@
 							title: '连麦请求被拒绝',
 							icon: 'none'
 						})
-						that.isJoin = false
+						that.isJoin = 'Begin'
 					} else {//错误超时
 						uni.showToast({
 							title: '连麦请求超时或错误',
 							icon: 'none'
 						})
-						that.isJoin = false
+						that.isJoin = 'Begin'
 					}
 				});
 			},
@@ -278,13 +294,13 @@
 				var linkView = this.$refs.linkView;
 				//停止远程视频view
 				linkView.stopRemoteView();
-				this.isJoin = false
+				this.isJoin = 'Begin'
 			},
 			onKickoutJoinAnchor(data){
 				var linkView = this.$refs.linkView;
 				//停止本地视频
 				linkView.stopLocalPreview();
-				this.isJoin = false
+				this.isJoin = 'Begin'
 			},
 			onClickExitAnchor() {
 				//退出连麦
@@ -296,20 +312,27 @@
 					console.log(22)
 					linkView.stopLocalPreview();
 					console.log("quitJoinAnchor", res);
-					that.isJoin = false
+					that.isJoin = 'Begin'
 				});
 				//停止本地视频
 				console.log(22)
 				linkView.stopLocalPreview();
 				console.log("~quitJoinAnchor");
-				that.isJoin = false
+				that.isJoin = 'Begin'
 				console.log(33)
 			},
 			messageInput(event) {
 				this.message = event.detail.value
 			},
 			onClickSendMsg() {
-				console.log(this.message)
+				// console.log(this.message)
+				if(this.message.trim().length === 0){
+					uni.showToast({
+						title: '写点什么再发送吧~',
+						icon: 'none'
+					})
+					return
+				}
 				//发送消息
 				sdkwx.sendRoomTextMsg(this.message, function(res){
 					console.log("sendRoomTextMsg", res);
@@ -320,6 +343,7 @@
 					name: uni.getStorageSync('nickname'),
 					text: this.message
 				})
+				this.message = ''
 			},
 			onRecvRoomTextMsg(data) {
 				this.chatList.push({
@@ -330,6 +354,27 @@
 			onRoomDestroy() {
 				uni.navigateBack({});
 			},
+			onRecvRoomCustomMsg(data) {
+				var cmd = data.cmd;
+				// if (cmd == "onAudienceEnter") {
+				// 	console.log(data.message);
+				// 	this.hotDegree = this.hotDegree + 1
+				// 	sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+				// 		console.log(res)
+				// 	})
+				// 	console.log(this.hotDegree)
+				// } else if (cmd == "onAudienceExit") {
+				// 	console.log(data.message);
+				// 	this.hotDegree = this.hotDegree - 1
+				// 	sdkwx.setCustomInfo(0,'hotDegree',this.hotDegree,function(res){
+				// 		console.log(res)
+				// 	})
+				// 	console.log(this.hotDegree)
+				if(cmd == "onLikeAdd"){
+					console.log(data.message);
+					this.likeValue = parseInt(data.message)>parseInt(this.likeValue)?data.message:this.likeValue
+				}
+			},
 			openMark() {
 				this.$refs.popup.open()
 			},
@@ -339,6 +384,8 @@
 			},
 			clickLike(){
 				console.log('666!')
+				this.likeValue = parseInt(this.likeValue) + 1
+				this.likeValueTmp = parseInt(this.likeValueTmp) + 1
 			},
 			getPrimary(){
 				let that = this
@@ -348,7 +395,8 @@
 						const data = res.data
 						that.primaryGood = data.primaryGood
 						that.primaryGoodCoverImg = data.primaryGoodCoverImg
-						that.hotDegree = data.hotDegree
+						that.hotDegree = data.hotDegree + 1
+						that.likeValue = data.likeValue ? parseInt(data.likeValue) : 0
 					}
 				})
 			},
@@ -358,6 +406,15 @@
 					// url: '/pages/main-webview/main-webview?goodsId=55',
 				})
 			},
+			timedTask(){
+				if(this.likeValueTmp>0){
+					let sendValue = this.likeValueTmp
+					this.likeValueTmp = 0;
+					sdkwx.sendRoomCustomMsg("onClickLike", sendValue, function(res2){
+						console.log(res2);
+					});
+				}
+			}
 		}
 	}
 </script>
@@ -418,6 +475,14 @@
 		text-align: center;
 	}
 	
+	.img-badge {
+		position: fixed;
+		right: 20rpx;
+		bottom: 80rpx;
+/* 		border-width: 1px;
+		border-color: #07C160; */
+	}
+	
 	.but-img {
 		width: 80rpx;
 		height: 80rpx;
@@ -433,10 +498,10 @@
 	}
 	
 	.but-dianzan {
-		width: 60upx;
-		height: 60upx;
+		width: 80rpx;
+		height: 80rpx;
 		position: fixed;
-		right: 30rpx;
+		right: 40rpx;
 		bottom: 20rpx;
 		/* background-color: #000000; */
 	}

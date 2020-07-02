@@ -10,7 +10,7 @@
 				</view>
 				<view class="chat-list bg-green">
 					<text class="chat-username white">主播&nbsp;&nbsp;</text>
-					<text class="chat-usertext">主播&nbsp;&nbsp;欢迎来到我的直播间，喜欢我可以点一下关注哦~</text>
+					<text class="chat-usertext">主播&nbsp;&nbsp;欢迎来到我的直播间，喜欢我可以为我点赞哦~</text>
 					<text class="chat-username white">主播&nbsp;&nbsp;</text>
 				</view>
 				<view class="chat-list" v-for="(it,i) in chatList" :key='i'>

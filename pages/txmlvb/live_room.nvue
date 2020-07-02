@@ -11,7 +11,7 @@
 				<image class="user-img" :src="storeAvatar"></image>
 				<view>
 					<text class="id">{{storeName}}</text>
-					<text class="text-box">热度&nbsp;&nbsp;{{hotDegree}}</text>
+					<text class="text-box">热度&nbsp;&nbsp;{{hotDegree}} | 点赞&nbsp;&nbsp;{{likeValue}}</text>
 				</view>
 				<image class="close_btn" @click="onClickExit()" src="~@/static/live-video/close.png"></image>
 				<view class="exit_audio_live" v-if="isJoin">
@@ -32,7 +32,7 @@
 			</view>
 
 			<view v-if="messageTextVisable">
-				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput" />
+				<input class="but-textarea" maxlength="50" placeholder="输入点什么..." :focus="mTextFocus" @blur="messageTextVisable=false" @input="messageInput" :value="message" />
 				<text class="but-textarea-confirm" @click="onClickSendMsg">发送</text>
 			</view>
 
@@ -87,7 +87,8 @@
 				storeId: uni.getStorageSync('storeId'),
 				isJoin: false,	// 是否在连麦状态
 				tmpData: null, // 连麦数据临时存放
-				timer: null
+				timer: null,
+				likeValue: 0
 			}
 		},
 		computed:{
@@ -129,23 +130,30 @@
 		},
 		mounted() {
 			this.onClickLive()
+			setInterval(()=>{
+				this.timedTask()
+			},20000)
 		},
 		// onUnload() {
 		beforeDestroy() {
 			var liveView = this.$refs.liveView;
 
 			this.exitRoom();
-
 			//停止本地视频预览
 			liveView.stopLocalPreview();
 		},
-		onBackPress(){
-			var liveView = this.$refs.liveView;
+		onBackPress(event){
+			console.log(1)
+			if(event.from !== 'navigateBack'){
+				this.onClickExit()
+				return true;
+			}
+			// var liveView = this.$refs.liveView;
 			
-			this.exitRoom();
+			// this.exitRoom();
 			
-			//停止本地视频预览
-			liveView.stopLocalPreview();
+			// //停止本地视频预览
+			// liveView.stopLocalPreview();
 		},
 		methods: {
 			createRoom() {
@@ -286,6 +294,9 @@
 						console.log(res)
 					})
 					console.log(this.hotDegree)
+				} else if(cmd == "onClickLike"){
+					console.log(data.message);
+					this.likeValue = parseInt(this.likeValue) + parseInt(data.message)
 				}
 			},
 			onClickExitAnchor() {
@@ -302,6 +313,13 @@
 			},
 			onClickSendMsg() {
 				//发送消息
+				if(this.message.trim().length === 0){
+					uni.showToast({
+						title: '写点什么再发送吧~',
+						icon: 'none'
+					})
+					return
+				}
 				sdkwx.sendRoomTextMsg(this.message, function(res) {
 					console.log("sendRoomTextMsg", res);
 				});
@@ -311,6 +329,7 @@
 					name: uni.getStorageSync('nickname'),
 					text: this.message
 				})
+				this.message = ''
 			},
 			openMark() {
 				this.$refs.popup.open()
@@ -338,6 +357,14 @@
 				sdkwx.setCustomInfo(0,'primaryGoodCoverImg',it.goodsGroupCoverImageUrl,function(res){
 					console.log(res)
 				})
+			},
+			timedTask(){
+				sdkwx.setCustomInfo(0,'likeValue',this.likeValue,function(res){
+					console.log(res)
+				})
+				sdkwx.sendRoomCustomMsg("onLikeAdd", this.likeValue, function(res2){
+					console.log(res2);
+				});
 			}
 		}
 	}

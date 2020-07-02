@@ -2,8 +2,8 @@
     "name" : "聚米为川",
     "appid" : "__UNI__0503A5A",
     "description" : "大米 测试 APP",
-    "versionName" : "1.0.2",
-    "versionCode" : 102,
+    "versionName" : "1.0.3",
+    "versionCode" : 103,
     "transformPx" : false,
     "fullscreen" : false, // 是否全屏
     "app-plus" : {
