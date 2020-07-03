@@ -247,8 +247,11 @@
 					this.tmpData = data
 					this.countSecClose()
 				}else{
-					this.tmpData = data
-					this.closeJoin()
+					let userID = data.anchorInfo.userID;
+					let reason = '主播已与其他用户连麦';
+					sdkwx.responseJoinAnchor(userID, false, reason, function(res) {
+						console.log(res);
+					})
 				}
 			},
 			onAnchorEnter(data) {

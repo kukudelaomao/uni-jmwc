@@ -354,6 +354,11 @@
 				})
 			},
 			onRoomDestroy() {
+				uni.showToast({
+					title: '直播结束',
+					duration: 5000,
+					icon: 'none'
+				})
 				uni.navigateBack({});
 			},
 			onRecvRoomCustomMsg(data) {

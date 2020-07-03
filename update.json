@@ -1,7 +1,7 @@
 {
-    "versionCode": "103",
-    "versionName": "1.0.3",
-    "versionInfo": "1.增加了点赞功能 \n 2.优化连麦逻辑 \n 3.修改了弹幕可连续发送和可发送空字符串的bug",
+    "versionCode": "104",
+    "versionName": "1.0.4",
+    "versionInfo": "1.连麦限制1人 \n 2.主推颜色变化，实时反馈 \n 3.点赞和热度更新间隔缩短",
     "forceUpdate": false,
     "downloadUrl": "http://192.168.1.195:32223/sanduoyun_b2c.apk"
 }
