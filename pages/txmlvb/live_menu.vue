@@ -134,6 +134,7 @@
 				});
 				uni.uploadFile({
 					url: 'http://192.168.1.195:32223/apigateway/upload/upload',
+					// url: "http://222.174.16.30:32222/apigateway/upload/upload",
 					filePath: tempFilePaths[0],
 					name: 'file',
 					// formData: {

@@ -14,7 +14,7 @@
 		</waterfall> -->
 	<view>
 		<wfalls-flow :list="list" ref="wfalls" @finishLoad="getLoadNum"></wfalls-flow>
-		<view v-if="list.length===0" class="no-live">暂无直播</view>
+		<view v-if="list.length===0" class="no-live">{{blockTip}}</view>
 		<button v-if="isStore" type="primary" size="mini" class="openLive" @click="onClickLiveOpen()">开直播</button>
 	</view>
 	
@@ -105,14 +105,15 @@
 				list: [],
 				isNewRenderDone: false ,//锁的作用
 				listIndex: 0,
-				listCount: 50
+				listCount: 50,
+				blockTip: "暂无直播"
 			}
 		},
 		onLoad() {
 			console.log("onLoad")
 			//初始化
-			var licenceURL = "http://license.vod2.myqcloud.com/license/v1/463ed367160e4904c4a319860c45f1e5/TXLiveSDK.licence";
-			var licenceKey = "b8852a6c9f5ac5b6230663a5917f1ada";
+			var licenceURL = "http://license.vod2.myqcloud.com/license/v1/1b356763d5a20f7aeaa8bbc64506e3a8/TXLiveSDK.licence";
+			var licenceKey = "eda5dff730338f1a1f0f1479d309070d";
 			sdk.setLicence(licenceURL, licenceKey);
 			this.onClickPlayLogin()
 			this.getMyStore()
@@ -214,6 +215,7 @@
 			onClickPlayLogin() {
 				//观众登录
 				let httpData = {};
+				this.blockTip = '正在登录直播系统...'
 				$httpLive.post("live/IMCommunication/getImSig", httpData,{
 					isPrompt: false,
 				}).then(res => {
@@ -221,7 +223,7 @@
 					if (res) {
 						const sig = res.value
 						sdkwx.login({
-							sdkAppID: "1400384719", //直播的appID
+							sdkAppID: "1400399301", //直播的appID
 							userID: uni.getStorageSync('firmId'), //用户ID
 							userName: uni.getStorageSync('nickname'), //用户名称
 							userAvatar: uni.getStorageSync('portrait'), //用户头像
@@ -230,9 +232,11 @@
 							if (resL.code == 0) {
 								console.log("login success",uni.getStorageSync('firmId'),uni.getStorageSync('nickname'));
 								// console.log(resL);
+								this.blockTip = '正在获取房间列表...'
 								sdkwx.getRoomList(this.listIndex, this.listCount, resRL => {
 									console.log(resRL);
 									if (resRL.code == 0) {
+										this.blockTip = '暂无直播'
 										//显示房间列表
 										for (let s of resRL.data) {
 											s.roomInfo = JSON.parse(s.roomInfo)
@@ -244,20 +248,29 @@
 										this.$refs.wfalls.init();
 										this.listIndex = this.list.length
 										console.log(this.listIndex, this.listCount)
+									} else {
+										this.blockTip = '暂无直播'
+										console.log("login failed! ", "errCode：" + resRL.code + ", errMsg:" + resRL.data);
+										uni.showToast({
+											title: '获取房间列表失败：' + resRL.code,
+											icon: "none"
+										});
 									}
 								});
 								
 							} else {
-								console.log("login failed! ", "errCode：" + res.code + ", errMsg:" + res.data);
+								this.blockTip = '暂无直播'
+								console.log("login failed! ", "errCode：" + resL.code + ", errMsg:" + resL.data);
 								uni.showToast({
-									title: res.data,
+									title: '登录直播系统失败：' + resL.code,
 									icon: "none"
 								});
 							}
 						});
 					} else {
+						this.blockTip = '暂无直播'
 						uni.showToast({
-							title: res.message,
+							title: '获取登录签名失败',
 							icon: "none"
 						});
 					}

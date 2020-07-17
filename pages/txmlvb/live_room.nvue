@@ -126,10 +126,15 @@
 					console.log("我收到消息了");
 				} else if (res.type == "onRecvRoomCustomMsg") { //自定义消息
 					that.onRecvRoomCustomMsg(res.data);
+				} else if (res.type == "onRoomDestroy") {
+					that.onRoomDestroy();
 				}
 			});
 		},
 		mounted() {
+			uni.setKeepScreenOn({
+			    keepScreenOn: true
+			});
 			this.onClickLive()
 			setInterval(()=>{
 				this.timedTask()
@@ -137,9 +142,14 @@
 		},
 		// onUnload() {
 		beforeDestroy() {
+			uni.setKeepScreenOn({
+			    keepScreenOn: false
+			});
 			var liveView = this.$refs.liveView;
-
-			this.exitRoom();
+			console.log('exit')
+			sdkwx.exitRoom(function(res) {
+				console.log("exitRoom success");
+			});
 			//停止本地视频预览
 			liveView.stopLocalPreview();
 		},
@@ -149,12 +159,6 @@
 				this.onClickExit()
 				return true;
 			}
-			// var liveView = this.$refs.liveView;
-			
-			// this.exitRoom();
-			
-			// //停止本地视频预览
-			// liveView.stopLocalPreview();
 		},
 		methods: {
 			createRoom() {
@@ -199,14 +203,12 @@
 				// uni.navigateTo({
 				// 	url: '../txmlvb/login'
 				// });
-				uni.navigateBack({ //uni.navigateTo跳转的返回，默认1为返回上一级
-					delta: 1
-				});
-			},
-			exitRoom(done) {
-				console.log('exit')
+				console.log('exit confirm')
 				sdkwx.exitRoom(function(res) {
 					console.log("exitRoom success");
+					uni.navigateBack({ //uni.navigateTo跳转的返回，默认1为返回上一级
+						delta: 1
+					});
 				});
 			},
 			onClickGetAudienceList() {
@@ -316,6 +318,16 @@
 				//主播踢出连麦
 				sdkwx.kickoutJoinAnchor(this.tmpData.anchorInfo.userID);
 				this.isJoin = false
+			},
+			onRoomDestroy() {
+				uni.showToast({
+					title: '监测到违规行为，请注意！',
+					duration: 3000,
+					icon: 'none'
+				})
+				setTimeout(()=>{
+					uni.navigateBack({});
+				},3000)
 			},
 			messageInput(event) {
 				this.message = event.detail.value

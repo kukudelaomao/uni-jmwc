@@ -1,7 +1,7 @@
 {
-    "versionCode": "104",
-    "versionName": "1.0.4",
-    "versionInfo": "1.连麦限制1人 \n 2.主推颜色变化，实时反馈 \n 3.点赞和热度更新间隔缩短",
+    "versionCode": "106",
+    "versionName": "1.0.6",
+    "versionInfo": "1.新增直播举报功能",
     "forceUpdate": false,
     "downloadUrl": "http://192.168.1.195:32223/sanduoyun_b2c.apk"
 }

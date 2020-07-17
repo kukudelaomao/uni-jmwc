@@ -1,5 +1,6 @@
 import request from "./request";
 let baseUrl = "http://192.168.1.195:32223/apigateway/";
+// let baseUrl = "http://222.174.16.30:32222/apigateway/";
 //可以new多个request来支持多个域名请求
 let $httpLive = new request({
 	//接口请求地址
@@ -53,6 +54,7 @@ $httpLive.requestStart = function (options) {
 	//请求前加入token
 	// options.headers['token'] = "1234568";
 	options.headers['firmId'] = uni.getStorageSync('firmId');
+	options.headers['sessionStr'] = uni.getStorageSync('sessionStr');
 	return options;
 }
 //请求结束

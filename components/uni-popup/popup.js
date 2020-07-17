@@ -13,6 +13,8 @@ const config = {
 	dialog:'center',
 	// 分享
 	share:'bottom',
+	// 单选
+	radio:'center',
 }
 
 export default {
